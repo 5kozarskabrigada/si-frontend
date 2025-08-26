@@ -1,0 +1,80 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1c1f24;
+}
+
+.stats {
+position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 0;
+    background-color: rgba(27, 28, 43, 0.7);
+    z-index: 10;
+    user-select: none;
+    pointer-events: none;
+}
+
+.stats img {
+    width: 40px;
+    height: 40px;
+    margin-right: 14px;
+}
+
+.score {
+    color: #fff;
+    text-align: center;
+    font-size: 36px;
+    font-weight: 800;
+    user-select: none;
+}
+
+.circle {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+        cursor: pointer;
+}
+
+#circleCanvas {
+    display: block;
+    max-width: 500px;
+}
+
+.circle img {
+    display: block;
+    /* margin-top: -50%; */
+    max-width: 500px;
+    height: 100%;
+    box-shadow: 0px 0px 16px 0px rgba(138, 143, 254, 0.05);
+    transition: transform 0.2s ease;
+    --tiltX: 0deg;
+    --tiltY: 0deg;
+    transform: rotateX(var(--tiltX)) rotateY(var(--tiltY));
+}
+
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0);
+    animation: ripple 600ms ease-out;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(5);
+        opacity: 0;
+    }
+}
