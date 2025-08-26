@@ -5,7 +5,7 @@ const scoreElement = document.querySelector('.score');
 
 // Set canvas size
 canvas.width = 500;
-canvas.height = 500; // Adjusted for a square aspect ratio, change if needed
+canvas.height = 800; // Adjusted for a square aspect ratio, change if needed
 
 // --- Telegram Mini App Setup ---
 const tg = window.Telegram.WebApp;
@@ -62,15 +62,15 @@ const coinImage = new Image();
 coinImage.src = '/assets/skin1.png';
 
 let scale = 1;
-const BUMP_AMOUNT = 1.08;
+const BUMP_AMOUNT = 1.05;
 const BUMP_RECOVERY = 0.02;
 
 let distortion = {
     amplitude: 0,
-    maxAmplitude: 40,
+    maxAmplitude: 20,
     centerX: 0,
     centerY: 0,
-    radius: 250,
+    radius: 150,
     recovery: 2
 };
 
