@@ -51,7 +51,7 @@ async function syncScore() {
 // --- Game Logic ---
 
 const coinImage = new Image();
-coinImage.src = './assets/skin1.png'; // Make sure this path is correct
+coinImage.src = '/assets/skin1.png'; // Make sure this path is correct
 
 coinImage.onload = () => {
     getInitialScore(); // Load user's score from backend once the image is ready
@@ -75,7 +75,7 @@ canvas.height = 800;
 
 const coinImage = new Image();
 // Ensure this path is correct
-coinImage.src = './assets/skin1.png';
+coinImage.src = '/assets/skin1.png';
 
 
 
