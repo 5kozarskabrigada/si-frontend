@@ -5,28 +5,27 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="styles.css">
-    <!-- Make viewport non-scalable for a more app-like feel -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Sisi Clicker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
     <div class="game">
-
         <div class="stats">
             <div class="score-display">
                 <img id="score-icon" src="/assets/coin.png" alt="coin">
-                <h2 class="score">0</h2>
+                <h2 class="score">LOADING...</h2>
             </div>
-            <!-- New Clicks Per Second display -->
-            <div class="cps-display">CPS: 0</div>
+            <div class="info-bar">
+                <span class="info-stat per-click-stat">Per Click: 0</span>
+                <span class="info-stat per-second-stat">Per Second: 0</span>
+                <span class="info-stat cps-stat">CPS: 0</span>
+            </div>
         </div>
-
         <div class="circle">
             <canvas id="circleCanvas"></canvas>
         </div>
-
     </div>
     <script src="app.js" defer></script>
 </body>

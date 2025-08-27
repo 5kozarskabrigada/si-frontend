@@ -4,12 +4,11 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    /* Use vh to ensure full viewport height */
     width: 100%;
     overflow: hidden;
-    /* Prevent scrolling */
     background-color: #1c1f24;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: white;
 }
 
 .game {
@@ -17,34 +16,28 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    /* Stack stats and circle vertically */
-    justify-content: center;
-    align-items: center;
-    position: relative;
+    /* Stack stats and circle */
 }
 
 .stats {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
-    /* Stack score and CPS */
     align-items: center;
-    justify-content: center;
-    padding: 20px 0;
-    background-color: rgba(27, 28, 43, 0.7);
+    padding: 15px 0;
+    background-color: #121418;
     z-index: 10;
     user-select: none;
     pointer-events: none;
-    gap: 8px;
-    /* Add space between score and CPS */
+    border-bottom: 1px solid #333;
+    /* Safe area padding for iPhones with notches */
+    padding-top: calc(15px + env(safe-area-inset-top));
 }
 
 .score-display {
     display: flex;
     align-items: center;
+    margin-bottom: 10px;
 }
 
 .stats img {
@@ -54,39 +47,38 @@ body {
 }
 
 .score {
-    color: #fff;
     font-size: 32px;
     font-weight: 800;
     margin: 0;
 }
 
-.cps-display {
-    color: #a0a0a0;
-    font-size: 16px;
-    font-weight: 600;
+.info-bar {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #b0b0b0;
 }
 
 .circle {
+    /* This is the key for the full-screen effect */
+    flex-grow: 1;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Make the circle responsive, taking up 80% of the smallest screen dimension */
-    width: 80vmin;
-    height: 80vmin;
-    max-width: 500px;
-    /* But don't let it get too big */
-    max-height: 500px;
+    width: 100%;
+    min-height: 0;
+    /* Important for flex-grow to work in all browsers */
     cursor: pointer;
-    overflow: hidden;
-    /* Keep ripple effect contained */
 }
 
 #circleCanvas {
     display: block;
-    width: 100%;
-    /* Canvas will now fill the .circle container */
-    height: 100%;
+    /* Make the canvas a perfect circle within the container */
+    width: 90%;
+    aspect-ratio: 1 / 1;
+    /* This keeps it a circle */
+    max-width: 600px;
 }
 
 .ripple {

@@ -1,33 +1,42 @@
 // app.js
+document.addEventListener('gesturestart', (e) => e.preventDefault()); // Prevent pinch zoom
+
 // --- Configuration ---
 const BACKEND_URL = 'https://si-backend-2i9b.onrender.com';
 const canvas = document.getElementById('circleCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.querySelector('.score');
-const cpsElement = document.querySelector('.cps-display');
+const cpsElement = document.querySelector('.cps-stat');
+const perClickElement = document.querySelector('.per-click-stat');
+const perSecondElement = document.querySelector('.per-second-stat');
 const circleContainer = document.querySelector('.circle');
 
 // --- Telegram Mini App Setup ---
 const tg = window.Telegram.WebApp;
 tg.ready();
-tg.expand(); // Make the mini app expand to full height
+tg.expand();
 
 // --- Game State ---
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
-let score = 0;
-let isSyncing = false;
-let clicksThisSecond = 0;
-let cps = 0;
+let score = 0.0;
+let clickValue = 0.000000001;
+let autoClickRate = 0.0; // This will be fetched from the server
 
-// --- Backend Communication (Updated for new server routes) ---
+// --- Timers and Syncing ---
+let lastFrameTime = Date.now();
+let clicksThisSecond = 0;
+let isSyncing = false;
+const SYNC_INTERVAL = 5000; // Sync with backend every 5 seconds
+
+// --- Backend Communication ---
 async function getInitialData() {
-    console.log(`Fetching initial data for user: ${userId}`);
     try {
         const response = await fetch(`${BACKEND_URL}/player/${userId}`);
         if (!response.ok) throw new Error(`Backend error: ${response.status}`);
         const data = await response.json();
         score = data.score;
-        scoreElement.textContent = Math.floor(score);
+        autoClickRate = data.autoClickRate; // Get passive income rate
+        updateUI(); // Initial UI update
     } catch (error) {
         console.error('Failed to fetch data:', error);
         scoreElement.textContent = 'Error';
@@ -50,117 +59,122 @@ async function syncScore() {
     }
 }
 
-// --- Clicks Per Second Logic ---
+// Set up periodic syncing
+setInterval(syncScore, SYNC_INTERVAL);
+
+// --- Clicks Per Second Counter ---
 setInterval(() => {
-    cps = clicksThisSecond;
+    cpsElement.textContent = `CPS: ${clicksThisSecond}`;
     clicksThisSecond = 0;
-    cpsElement.textContent = `CPS: ${cps}`;
-    // Optional: Sync score every few seconds instead of every click to reduce server load
-    // syncScore(); 
 }, 1000);
 
+// --- UI Update Function ---
+function updateUI() {
+    scoreElement.textContent = score.toFixed(9);
+    perClickElement.textContent = `Per Click: ${clickValue.toFixed(9)}`;
+    perSecondElement.textContent = `Per Second: ${autoClickRate.toFixed(9)}`;
+}
 
 // --- Visual Effects & Canvas Setup ---
 const coinImage = new Image();
 coinImage.src = '/assets/skin1.png';
-
 let scale = 1, isDistortionActive = false, originalImageData = null;
 const BUMP_AMOUNT = 1.05, BUMP_RECOVERY = 0.02;
 let distortion = { amplitude: 0, maxAmplitude: 20, centerX: 0, centerY: 0, radius: 150, recovery: 2 };
 
-
-// --- Responsive Canvas Logic ---
 function setupCanvas() {
-    // Get the size of the container from the CSS
     const size = circleContainer.getBoundingClientRect().width;
-    canvas.width = size;
-    canvas.height = size;
-
-    // Recalculate distortion radius based on new canvas size
-    distortion.radius = size * 0.4;
-
-    console.log("Canvas resized to:", size, "x", size);
-
-    // Re-draw and cache the image at the new size
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    ctx.scale(dpr, dpr);
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    distortion.radius = (size * 0.4);
     if (coinImage.complete && coinImage.naturalWidth > 0) {
-        ctx.drawImage(coinImage, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(coinImage, 0, 0, size, size);
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 }
 
-
 // --- Main Event Handlers ---
 coinImage.onload = () => {
-    console.log("Image loaded successfully.");
-    setupCanvas();      // 1. Set initial canvas size
-    getInitialData();   // 2. Fetch user's score
-    requestAnimationFrame(animate); // 3. Start animation loop
+    setupCanvas();
+    getInitialData();
+    requestAnimationFrame(gameLoop); // Start the main game loop
 };
 
-// Redraw canvas if the window is resized
 window.addEventListener('resize', setupCanvas);
 
 canvas.addEventListener('mousedown', (e) => {
-    score++;
+    score += clickValue;
     clicksThisSecond++;
-    scoreElement.textContent = Math.floor(score);
-    syncScore(); // Sync on every click for instant feedback
 
+    // Always trigger effects from the center
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
 
     scale = BUMP_AMOUNT;
-    createRipple(e);
+    createRipple(e); // Pass original event for visual placement
 
     if (!isDistortionActive) {
         isDistortionActive = true;
         distortion.amplitude = distortion.maxAmplitude;
-        distortion.centerX = x;
-        distortion.centerY = y;
+        distortion.centerX = centerX; // Use center for distortion
+        distortion.centerY = centerY; // Use center for distortion
     }
 });
 
+// --- Game Loop and Animation ---
+function gameLoop() {
+    const now = Date.now();
+    const delta = (now - lastFrameTime) / 1000; // Time since last frame in seconds
+    lastFrameTime = now;
 
-// --- Animation Loop and Helper Functions ---
+    // Add passive income
+    score += autoClickRate * delta;
+
+    updateUI(); // Update score and stats text
+    animateCanvas(); // Run the visual effects animation
+
+    requestAnimationFrame(gameLoop);
+}
+
 function createRipple(e) {
-    // ... createRipple code is unchanged ...
     const ripple = document.createElement('span');
     ripple.classList.add('ripple');
     const rect = circleContainer.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
     ripple.style.width = ripple.style.height = `${size}px`;
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
+
+    // Always position ripple in the center of the container
+    ripple.style.left = `${(rect.width - size) / 2}px`;
+    ripple.style.top = `${(rect.height - size) / 2}px`;
+
     circleContainer.appendChild(ripple);
     ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-function animate() {
-    if (!originalImageData) {
-        requestAnimationFrame(animate);
-        return; // Don't draw if the image isn't cached yet
-    }
-
-    // ... animation and distortion logic is mostly unchanged ...
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function animateCanvas() {
+    if (!originalImageData) return;
+    // ... (Your existing canvas animation/distortion logic is fine here) ...
+    const size = parseFloat(canvas.style.width);
+    ctx.clearRect(0, 0, size, size);
     const frameImageData = new ImageData(new Uint8ClampedArray(originalImageData.data), originalImageData.width, originalImageData.height);
 
     if (isDistortionActive) {
-        // ... (distortion calculation loop) ...
         const data = frameImageData.data;
         const sourceData = originalImageData.data;
         const { centerX, centerY, radius, amplitude } = distortion;
         for (let y = 0; y < canvas.height; y++) {
             for (let x = 0; x < canvas.width; x++) {
-                const dx = x - centerX;
-                const dy = y - centerY;
+                const dx = x - (centerX * window.devicePixelRatio);
+                const dy = y - (centerY * window.devicePixelRatio);
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < radius) {
+                if (distance < radius * window.devicePixelRatio) {
                     const angle = Math.atan2(dy, dx);
-                    const displacement = Math.sin(distance / radius * Math.PI) * amplitude;
+                    const displacement = Math.sin(distance / (radius * window.devicePixelRatio) * Math.PI) * amplitude;
                     const srcX = Math.round(x + Math.cos(angle) * displacement);
                     const srcY = Math.round(y + Math.sin(angle) * displacement);
                     if (srcX >= 0 && srcX < canvas.width && srcY >= 0 && srcY < canvas.height) {
@@ -177,10 +191,10 @@ function animate() {
     }
 
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.translate(size / 2, size / 2);
     ctx.scale(scale, scale);
-    ctx.translate(-canvas.width / 2, -canvas.height / 2);
-    ctx.putImageData(frameImageData, 0, 0);
+    ctx.translate(-size / 2, -size / 2);
+    ctx.putImageData(frameImageData, 0, 0, 0, 0, size, size);
     ctx.restore();
 
     if (scale > 1) scale = Math.max(1, scale - BUMP_RECOVERY);
@@ -192,5 +206,4 @@ function animate() {
             isDistortionActive = false;
         }
     }
-    requestAnimationFrame(animate);
 }
