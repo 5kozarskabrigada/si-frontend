@@ -1,67 +1,93 @@
-html, body {
+/* styles.css */
+html,
+body {
     margin: 0;
-    height: 100%;
     padding: 0;
+    height: 100vh;
+    /* Use vh to ensure full viewport height */
     width: 100%;
+    overflow: hidden;
+    /* Prevent scrolling */
+    background-color: #1c1f24;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.game {
+    width: 100%;
+    height: 100%;
     display: flex;
+    flex-direction: column;
+    /* Stack stats and circle vertically */
     justify-content: center;
     align-items: center;
-    background-color: #1c1f24;
+    position: relative;
 }
 
 .stats {
-position: absolute;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     display: flex;
+    flex-direction: column;
+    /* Stack score and CPS */
     align-items: center;
     justify-content: center;
-    padding: 15px 0;
+    padding: 20px 0;
     background-color: rgba(27, 28, 43, 0.7);
     z-index: 10;
     user-select: none;
     pointer-events: none;
+    gap: 8px;
+    /* Add space between score and CPS */
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
 }
 
 .stats img {
-    width: 40px;
-    height: 40px;
-    margin-right: 14px;
+    width: 35px;
+    height: 35px;
+    margin-right: 12px;
 }
 
 .score {
     color: #fff;
-    text-align: center;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 800;
-    user-select: none;
+    margin: 0;
+}
+
+.cps-display {
+    color: #a0a0a0;
+    font-size: 16px;
+    font-weight: 600;
 }
 
 .circle {
     position: relative;
-    display: inline-block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Make the circle responsive, taking up 80% of the smallest screen dimension */
+    width: 80vmin;
+    height: 80vmin;
+    max-width: 500px;
+    /* But don't let it get too big */
+    max-height: 500px;
+    cursor: pointer;
     overflow: hidden;
-        cursor: pointer;
+    /* Keep ripple effect contained */
 }
 
 #circleCanvas {
     display: block;
-    max-width: 500px;
-}
-
-.circle img {
-    display: block;
-    /* margin-top: -50%; */
-    max-width: 500px;
+    width: 100%;
+    /* Canvas will now fill the .circle container */
     height: 100%;
-    box-shadow: 0px 0px 16px 0px rgba(138, 143, 254, 0.05);
-    transition: transform 0.2s ease;
-    --tiltX: 0deg;
-    --tiltY: 0deg;
-    transform: rotateX(var(--tiltX)) rotateY(var(--tiltY));
 }
-
 
 .ripple {
     position: absolute;
