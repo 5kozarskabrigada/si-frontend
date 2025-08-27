@@ -1,19 +1,29 @@
-// app.js (Largely the same, just verified against new backend)
+// app.js
+
+// Prevent pinch-to-zoom for a native app feel
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
-const BACKEND_URL = 'YOUR_RENDER_URL'; // e.g. https://si-backend-2i9b.onrender.com
+// --- Configuration & Element Selection ---
+const BACKEND_URL = 'YOUR_RENDER_URL'; // e.g., https://si-backend-2i9b.onrender.com
 const canvas = document.getElementById('circleCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.querySelector('.score');
 const cpsElement = document.querySelector('.cps-stat');
 const perClickElement = document.querySelector('.per-click-stat');
 const perSecondElement = document.querySelector('.per-second-stat');
-const circleContainer = document.querySelector('.circle');
+const canvasContainer = document.querySelector('.canvas-container'); // Changed from .circle
 
+// Nav Buttons
+const navClickerBtn = document.getElementById('nav-clicker');
+const navUpgradesBtn = document.getElementById('nav-upgrades');
+const navTasksBtn = document.getElementById('nav-tasks');
+
+// --- Telegram Mini App Setup ---
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
+// --- Game State ---
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
 let score = 0.0;
 let clickValue = 0.000000001;
@@ -24,12 +34,13 @@ let clicksThisSecond = 0;
 let isSyncing = false;
 const SYNC_INTERVAL = 5000;
 
+// --- Backend Communication ---
 async function getInitialData() {
     try {
         const response = await fetch(`${BACKEND_URL}/player/${userId}`);
         if (!response.ok) throw new Error(`Backend error: ${response.status}`);
         const data = await response.json();
-        score = parseFloat(data.score); // Ensure score is a number
+        score = parseFloat(data.score);
         autoClickRate = parseFloat(data.auto_click_rate);
         updateUI();
     } catch (error) {
@@ -55,12 +66,12 @@ async function syncScore() {
 }
 
 setInterval(syncScore, SYNC_INTERVAL);
-
 setInterval(() => {
     cpsElement.textContent = `CPS: ${clicksThisSecond}`;
     clicksThisSecond = 0;
 }, 1000);
 
+// --- UI & Game Logic ---
 function updateUI() {
     scoreElement.textContent = score.toFixed(9);
     perClickElement.textContent = `Per Click: ${clickValue.toFixed(9)}`;
@@ -68,13 +79,13 @@ function updateUI() {
 }
 
 const coinImage = new Image();
-coinImage.src = '/assets/skin1.png'; // Use your anime image here
+coinImage.src = '/assets/skin1.png'; // Make sure this is the path to your full-screen image
 let scale = 1, isDistortionActive = false, originalImageData = null;
 const BUMP_AMOUNT = 1.05, BUMP_RECOVERY = 0.02;
 let distortion = { amplitude: 0, maxAmplitude: 20, centerX: 0, centerY: 0, radius: 150, recovery: 2 };
 
 function setupCanvas() {
-    const rect = circleContainer.getBoundingClientRect();
+    const rect = canvasContainer.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
@@ -83,11 +94,13 @@ function setupCanvas() {
     canvas.style.height = `${rect.height}px`;
     distortion.radius = Math.min(rect.width, rect.height) * 0.4;
     if (coinImage.complete && coinImage.naturalWidth > 0) {
+        // Draw image to fill the canvas container
         ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 }
 
+// --- Main Event Handlers ---
 coinImage.onload = () => {
     setupCanvas();
     getInitialData();
@@ -112,6 +125,24 @@ canvas.addEventListener('mousedown', (e) => {
     }
 });
 
+// --- Navigation Button Listeners ---
+navClickerBtn.addEventListener('click', () => {
+    console.log("Clicked on Clicker Page");
+    // In the future, you would show the main clicker screen here
+});
+
+navUpgradesBtn.addEventListener('click', () => {
+    console.log("Clicked on Upgrades Page");
+    // In the future, you would show an upgrades menu here
+});
+
+navTasksBtn.addEventListener('click', () => {
+    console.log("Clicked on Tasks Page");
+    // In the future, you would show a tasks/quests menu here
+});
+
+
+// --- Game Loop and Animation ---
 function gameLoop() {
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
@@ -122,27 +153,24 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-function createRipple(e) {
+function createRipple() {
     const ripple = document.createElement('span');
     ripple.classList.add('ripple');
-    const rect = circleContainer.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
+    const rect = canvasContainer.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 0.8;
     ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${(rect.width - size) / 2}px`;
-    ripple.style.top = `${(rect.height - size) / 2}px`;
-    circleContainer.appendChild(ripple);
+    canvasContainer.appendChild(ripple);
     ripple.addEventListener('animationend', () => ripple.remove());
 }
 
 function animateCanvas() {
     if (!originalImageData) return;
     const rect = canvas.getBoundingClientRect();
-    const sizeW = rect.width;
-    const sizeH = rect.height;
-    ctx.clearRect(0, 0, sizeW, sizeH);
+    ctx.clearRect(0, 0, rect.width, rect.height);
     const frameImageData = new ImageData(new Uint8ClampedArray(originalImageData.data), originalImageData.width, originalImageData.height);
 
     if (isDistortionActive) {
+        // ... (Distortion logic is unchanged) ...
         const data = frameImageData.data;
         const sourceData = originalImageData.data;
         const dpr = window.devicePixelRatio || 1;
@@ -168,9 +196,9 @@ function animateCanvas() {
     }
 
     ctx.save();
-    ctx.translate(sizeW / 2, sizeH / 2);
+    ctx.translate(rect.width / 2, rect.height / 2);
     ctx.scale(scale, scale);
-    ctx.translate(-sizeW / 2, -sizeH / 2);
+    ctx.translate(-rect.width / 2, -rect.height / 2);
     ctx.putImageData(frameImageData, 0, 0);
     ctx.restore();
 
