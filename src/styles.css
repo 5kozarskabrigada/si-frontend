@@ -1,7 +1,10 @@
 /* styles.css */
 :root {
-    --gradient-start: #7f5a83;
-    --gradient-end: #0d324d;
+    --dark-bg: #10101d;
+    --accent-purple: #8e44ad;
+    --light-purple: #c39bd3;
+    --glass-bg: rgba(26, 26, 46, 0.4);
+    --glass-border: rgba(142, 68, 173, 0.3);
 }
 
 html,
@@ -13,18 +16,15 @@ body {
     overflow: hidden;
     color: white;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: #090a0f;
-    /* Fallback background */
+    background-color: var(--dark-bg);
 }
 
 .game {
     width: 100%;
     height: 100%;
     position: relative;
-    /* This is key for layering */
 }
 
-/* --- Full Screen Background Canvas --- */
 .canvas-container {
     position: absolute;
     top: 0;
@@ -32,6 +32,8 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1;
+    /* This moves the entire canvas up slightly */
+    transform: translateY(-5%);
 }
 
 #circleCanvas {
@@ -39,10 +41,8 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Ensures image covers the screen without stretching */
 }
 
-/* --- Floating UI Elements --- */
 .stats {
     position: absolute;
     top: 0;
@@ -52,108 +52,101 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 0;
-    /* Glassmorphism with Gradient */
-    background: linear-gradient(135deg, rgba(127, 90, 131, 0.1), rgba(13, 50, 77, 0.1));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    /* For Safari */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    /* Safe area for phone notches */
-    padding-top: calc(15px + env(safe-area-inset-top));
+    gap: 16px;
+    /* Increased space between elements */
+    padding: 20px 0;
+    /* Increased vertical padding */
+    /* More opaque glass effect */
+    background: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--glass-border);
+    padding-top: calc(20px + env(safe-area-inset-top));
+    /* More space at top */
 }
 
 .score-display {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
 }
 
 .stats img {
-    width: 32px;
-    height: 32px;
-    margin-right: 12px;
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+    width: 30px;
+    height: 30px;
+    margin-right: 15px;
 }
 
 .score {
-    font-size: 32px;
-    /* A bit smaller */
-    font-weight: 800;
+    font-size: 30px;
+    /* Smaller score */
+    font-weight: 700;
     margin: 0;
-    /* Clean, gradient text */
-    background: linear-gradient(45deg, #FFD700, #FFFACD);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--light-purple);
+    /* Clean purple color */
+    text-shadow: 0 0 10px rgba(195, 155, 211, 0.5);
 }
 
 .info-bar {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    width: 90%;
-    max-width: 400px;
+    width: 95%;
+    max-width: 450px;
     text-align: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .info-stat {
-    font-size: 15px;
-    /* A bit bigger */
+    font-size: 16px;
+    /* Bigger stats */
     font-weight: 500;
     color: #e0e0e0;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 6px 0;
-    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 0;
+    border-radius: 8px;
 }
 
-/* --- New Navigation Bar --- */
 .nav-bar {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     z-index: 10;
-    display: flex;
-    justify-content: space-around;
-    /* Glassmorphism with Gradient */
-    background: linear-gradient(135deg, rgba(127, 90, 131, 0.1), rgba(13, 50, 77, 0.1));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    /* For Safari */
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    /* Safe area for phone home bars */
+    display: grid;
+    /* Responsive grid for 5 items */
+    grid-template-columns: repeat(5, 1fr);
+    /* Much more opaque, solid color */
+    background: #151522;
+    border-top: 1px solid var(--glass-border);
     padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-button {
     background: none;
     border: none;
-    color: #a0a0a0;
+    color: #888;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 12px;
+    justify-content: center;
+    padding: 10px 5px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    gap: 4px;
 }
 
 .nav-button svg {
-    margin-bottom: 4px;
+    width: 24px;
+    height: 24px;
 }
 
 .nav-button span {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
 }
 
-.nav-button:hover {
-    color: #ffffff;
-}
-
 .nav-button.active {
-    color: #ffffff;
-    /* Add an indicator */
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.1), transparent);
+    color: white;
+    background-color: var(--accent-purple);
 }
 
 .ripple {

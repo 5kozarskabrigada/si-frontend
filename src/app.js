@@ -1,24 +1,17 @@
 // app.js
-
-// Prevent pinch-to-zoom for a native app feel
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
-// --- Configuration & Element Selection ---
-const BACKEND_URL = 'YOUR_RENDER_URL'; // e.g., https://si-backend-2i9b.onrender.com
+// --- Element Selection ---
+const BACKEND_URL = 'YOUR_RENDER_URL';
 const canvas = document.getElementById('circleCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.querySelector('.score');
 const cpsElement = document.querySelector('.cps-stat');
 const perClickElement = document.querySelector('.per-click-stat');
 const perSecondElement = document.querySelector('.per-second-stat');
-const canvasContainer = document.querySelector('.canvas-container'); // Changed from .circle
+const canvasContainer = document.querySelector('.canvas-container');
 
-// Nav Buttons
-const navClickerBtn = document.getElementById('nav-clicker');
-const navUpgradesBtn = document.getElementById('nav-upgrades');
-const navTasksBtn = document.getElementById('nav-tasks');
-
-// --- Telegram Mini App Setup ---
+// --- Telegram Setup ---
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
@@ -27,7 +20,7 @@ tg.expand();
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
 let score = 0.0;
 let clickValue = 0.000000001;
-let autoClickRate = 0.0;
+let autoClickRate = 0.0; // Fetched from server
 
 let lastFrameTime = Date.now();
 let clicksThisSecond = 0;
@@ -40,8 +33,11 @@ async function getInitialData() {
         const response = await fetch(`${BACKEND_URL}/player/${userId}`);
         if (!response.ok) throw new Error(`Backend error: ${response.status}`);
         const data = await response.json();
-        score = parseFloat(data.score);
-        autoClickRate = parseFloat(data.auto_click_rate);
+
+        // **CRITICAL FIX:** Ensure data from server is always parsed as a number
+        score = parseFloat(data.score) || 0.0;
+        autoClickRate = parseFloat(data.auto_click_rate) || 0.0;
+
         updateUI();
     } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -65,6 +61,7 @@ async function syncScore() {
     }
 }
 
+// Set up periodic tasks
 setInterval(syncScore, SYNC_INTERVAL);
 setInterval(() => {
     cpsElement.textContent = `CPS: ${clicksThisSecond}`;
@@ -79,7 +76,7 @@ function updateUI() {
 }
 
 const coinImage = new Image();
-coinImage.src = '/assets/skin1.png'; // Make sure this is the path to your full-screen image
+coinImage.src = '/assets/skin1.png'; // Path to your full-screen image
 let scale = 1, isDistortionActive = false, originalImageData = null;
 const BUMP_AMOUNT = 1.05, BUMP_RECOVERY = 0.02;
 let distortion = { amplitude: 0, maxAmplitude: 20, centerX: 0, centerY: 0, radius: 150, recovery: 2 };
@@ -94,7 +91,6 @@ function setupCanvas() {
     canvas.style.height = `${rect.height}px`;
     distortion.radius = Math.min(rect.width, rect.height) * 0.4;
     if (coinImage.complete && coinImage.naturalWidth > 0) {
-        // Draw image to fill the canvas container
         ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
@@ -116,7 +112,7 @@ canvas.addEventListener('mousedown', (e) => {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     scale = BUMP_AMOUNT;
-    createRipple(e);
+    createRipple();
     if (!isDistortionActive) {
         isDistortionActive = true;
         distortion.amplitude = distortion.maxAmplitude;
@@ -125,29 +121,15 @@ canvas.addEventListener('mousedown', (e) => {
     }
 });
 
-// --- Navigation Button Listeners ---
-navClickerBtn.addEventListener('click', () => {
-    console.log("Clicked on Clicker Page");
-    // In the future, you would show the main clicker screen here
-});
-
-navUpgradesBtn.addEventListener('click', () => {
-    console.log("Clicked on Upgrades Page");
-    // In the future, you would show an upgrades menu here
-});
-
-navTasksBtn.addEventListener('click', () => {
-    console.log("Clicked on Tasks Page");
-    // In the future, you would show a tasks/quests menu here
-});
-
-
 // --- Game Loop and Animation ---
 function gameLoop() {
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
+
+    // This now correctly adds passive income every frame
     score += autoClickRate * delta;
+
     updateUI();
     animateCanvas();
     requestAnimationFrame(gameLoop);
@@ -156,13 +138,13 @@ function gameLoop() {
 function createRipple() {
     const ripple = document.createElement('span');
     ripple.classList.add('ripple');
-    const rect = canvasContainer.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height) * 0.8;
+    const size = Math.max(canvas.width, canvas.height) * 0.8;
     ripple.style.width = ripple.style.height = `${size}px`;
     canvasContainer.appendChild(ripple);
     ripple.addEventListener('animationend', () => ripple.remove());
 }
 
+// ... the animateCanvas function remains unchanged ...
 function animateCanvas() {
     if (!originalImageData) return;
     const rect = canvas.getBoundingClientRect();
@@ -170,7 +152,6 @@ function animateCanvas() {
     const frameImageData = new ImageData(new Uint8ClampedArray(originalImageData.data), originalImageData.width, originalImageData.height);
 
     if (isDistortionActive) {
-        // ... (Distortion logic is unchanged) ...
         const data = frameImageData.data;
         const sourceData = originalImageData.data;
         const dpr = window.devicePixelRatio || 1;
