@@ -1,7 +1,8 @@
+// app.js - FINAL FIXED VERSION
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
-const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set your backend URL
+const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this!
 const tg = window.Telegram.WebApp;
 
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -112,7 +113,8 @@ function updateUI() {
         }
     }
 }
-// --- NEW Tabbed Upgrade Logic ---
+
+// --- Upgrade Logic ---
 function generateUpgradesHTML() {
     const containers = {
         click: document.getElementById('clickUpgrades'),
@@ -139,7 +141,6 @@ function generateUpgradesHTML() {
                 </div>`;
         }
     }
-    // Add event listeners after generating HTML
     for (const type in upgrades) {
         for (const id in upgrades[type]) {
             const btn = document.getElementById(`${id}_btn`);
@@ -158,25 +159,34 @@ function openUpgradeTab(event) {
 
 async function purchaseUpgrade(upgradeId) {
     const btn = document.getElementById(`${upgradeId}_btn`);
+    const originalText = btn.innerHTML;
     btn.disabled = true;
+    btn.innerHTML = 'Purchasing...';
     try {
         const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
         playerData = player;
         updateUI();
         tg.HapticFeedback.notificationOccurred('success');
+        btn.innerHTML = 'Success!';
     } catch (error) {
         console.error('Upgrade failed:', error);
         tg.HapticFeedback.notificationOccurred('error');
+        btn.innerHTML = 'Not Enough Coins';
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            updateUI();
+        }, 1000);
     }
 }
 
-
+// --- Canvas & Visuals ---
 const coinImage = new Image();
 coinImage.src = '/assets/skin1.png';
-let scale = 1, isDistortionActive = false, originalImageData = null;
-let isImageReady = false; // BUG FIX: New flag to track image status
-const BUMP_AMOUNT = 1.05, BUMP_RECOVERY = 0.02;
-let distortion = { amplitude: 0, maxAmplitude: 20, centerX: 0, centerY: 0, radius: 150, recovery: 2 };
+let scale = 1;
+let isImageReady = false; // Flag to ensure image is loaded before drawing
+const BUMP_AMOUNT = 1.05;
+const BUMP_RECOVERY = 0.04;
 
 function setupCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -184,29 +194,41 @@ function setupCanvas() {
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
-    distortion.radius = Math.min(rect.width, rect.height) * 0.4;
-    if (isImageReady) { // Only draw if the image is confirmed ready
+    if (isImageReady) {
         ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
-        originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 }
 
+// FEATURE CHANGE: Simplified animation, no more distortion
 function animateCanvas() {
-    if (!originalImageData) return; // Guard clause
-    // ... rest of animateCanvas is the same ...
+    if (!isImageReady) return; // Guard clause
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.save();
+    ctx.translate(rect.width / 2, rect.height / 2);
+    ctx.scale(scale, scale);
+    ctx.translate(-rect.width / 2, -rect.height / 2);
+    ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
+    ctx.restore();
+
+    // Smoothly return scale to 1
+    if (scale > 1) {
+        scale -= BUMP_RECOVERY;
+        if (scale < 1) scale = 1;
+    }
 }
 
 // --- Main Game Loop ---
 function gameLoop() {
-    requestAnimationFrame(gameLoop); // Keep the loop running
+    requestAnimationFrame(gameLoop);
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
-    if (playerData) { // Only process game logic if player data exists
+    if (playerData) {
         const passiveIncome = autoClickRate.times(delta);
         score = score.plus(passiveIncome);
-        playerData.score = score.toFixed(9);
+        playerData.score = score.toFixed(9); // Keep local data in sync for syncs
         updateUI();
     }
 
@@ -223,16 +245,19 @@ async function init() {
         setupEventListeners();
         updateUI();
 
-        // BUG FIX: Wait for image to load before starting the game loop
+        // BUG FIX: The foolproof image loading sequence
         coinImage.onload = () => {
             isImageReady = true;
             setupCanvas();
+            // Start the game loop only after the image is fully ready
             lastFrameTime = Date.now();
             requestAnimationFrame(gameLoop);
             loadingOverlay.classList.remove('active');
         };
-        // If image is already cached and loaded, trigger it manually
-        if (coinImage.complete) coinImage.onload();
+        // If image is already cached by the browser, the onload event might not fire, so we trigger it manually.
+        if (coinImage.complete) {
+            coinImage.onload();
+        }
 
     } catch (error) {
         console.error("Initialization failed:", error);
@@ -252,14 +277,7 @@ function setupEventListeners() {
         score = score.plus(clickValue);
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
-        const rect = canvas.getBoundingClientRect();
-        scale = BUMP_AMOUNT;
-        if (!isDistortionActive) {
-            isDistortionActive = true;
-            distortion.amplitude = distortion.maxAmplitude;
-            distortion.centerX = rect.width / 2;
-            distortion.centerY = rect.height / 2;
-        }
+        scale = BUMP_AMOUNT; // Trigger the bump effect
     });
     setInterval(() => {
         cpsElement.textContent = `${clicksThisSecond} CPS`;
