@@ -362,30 +362,28 @@ body {
 
 #clicker-container {
     display: flex;
-    /* Use flexbox to center the image */
     justify-content: center;
     align-items: center;
     width: 100%;
     height: calc(100% - 150px);
-    /* Adjust height to give space for stats and nav */
+    /* leaves space for stats + nav */
     position: absolute;
-    /* Position relative to the parent page */
     top: 0;
     left: 0;
     overflow: hidden;
-    /* Hide any overflow if image scales too large */
 }
 
 #coinImage {
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
-    /* Ensure the whole image is visible */
+    /* keeps full image visible */
     cursor: pointer;
     transition: transform 0.1s ease-out;
-    /* Keep the existing transition */
     user-select: none;
     z-index: 5;
-    /* Ensure it's above other elements if needed */
 }
 
 
