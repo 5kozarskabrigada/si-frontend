@@ -18,8 +18,6 @@ console.log("Telegram User:", userInfo);
 
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
-const canvas = document.getElementById('circleCanvas');
-const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 const cpsElement = document.getElementById('cps-stat');
 const perClickElement = document.getElementById('per-click-stat');
