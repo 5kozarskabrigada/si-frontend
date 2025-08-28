@@ -38,9 +38,6 @@ const userInfo = {
     photo_url: tg.initDataUnsafe?.user?.photo_url
 };
 
-// Save to backend
-await apiRequest('/player/syncProfile', 'POST', userInfo);
-
 
 // --- Game State & Constants ---
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
