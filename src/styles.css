@@ -359,3 +359,11 @@ body {
 .cost {
     font-size: 0.9rem;
 }
+
+#coinImage {
+    width: 200px;
+    height: 200px;
+    cursor: pointer;
+    transition: transform 0.1s ease-out;
+    user-select: none;
+}

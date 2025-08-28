@@ -4,6 +4,18 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this!
 const tg = window.Telegram.WebApp;
 
+const telegramUser = tg.initDataUnsafe?.user;
+
+const userInfo = {
+    id: telegramUser?.id || 'test-user-01',
+    username: telegramUser?.username || 'guest',
+    first_name: telegramUser?.first_name || '',
+    last_name: telegramUser?.last_name || '',
+    photo_url: telegramUser?.photo_url || '/assets/default-avatar.png'
+};
+
+console.log("Telegram User:", userInfo);
+
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
 const canvas = document.getElementById('circleCanvas');
@@ -200,62 +212,60 @@ async function purchaseUpgrade(upgradeId) {
     }
 }
 
-// --- Canvas & Visuals ---
-const coinImage = new Image();
-coinImage.src = '/assets/skin1.png';
+
+const coinImageEl = document.getElementById('coinImage');
 let scale = 1;
-let isImageReady = false;
-const BUMP_AMOUNT = 1.05;
-const BUMP_RECOVERY = 0.04;
+const BUMP_AMOUNT = 1.2;
+const BUMP_RECOVERY = 0.05;
 
-function setupCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    if (isImageReady) {
-        ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
-    }
-}
-
-function animateCanvas() {
-    if (!isImageReady) return;
-    const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0, 0, rect.width, rect.height);
-    ctx.save();
-    ctx.translate(rect.width / 2, rect.height / 2);
-    ctx.scale(scale, scale);
-    ctx.translate(-rect.width / 2, -rect.height / 2);
-    ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
-    ctx.restore();
+function updateImageScale() {
+    coinImageEl.style.transform = `scale(${scale})`;
     if (scale > 1) {
         scale = Math.max(1, scale - BUMP_RECOVERY);
+        requestAnimationFrame(updateImageScale);
     }
 }
 
-// --- Main Game Loop ---
+coinImageEl.addEventListener('mousedown', () => {
+    if (!playerData) return;
+    const currentScore = new Decimal(playerData.score);
+    const clickAmount = new Decimal(playerData.click_value);
+    playerData.score = currentScore.plus(clickAmount).toFixed(9);
+    clicksThisSecond++;
+
+    tg.HapticFeedback.impactOccurred('light');
+
+    // bump animation
+    scale = BUMP_AMOUNT;
+    updateImageScale();
+});
+
+
+let incomeTimer = 0; // counts seconds
+
 function gameLoop() {
     requestAnimationFrame(gameLoop);
 
     const now = Date.now();
-    const delta = (now - lastFrameTime) / 1000;
+    const delta = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
 
     if (playerData) {
-        // Calculate passive income based on auto_click_rate
-        const passiveIncome = new Decimal(playerData.auto_click_rate).times(delta);
+        // add passive income once per second
+        incomeTimer += delta;
+        if (incomeTimer >= 1) {
+            const passiveIncome = new Decimal(playerData.auto_click_rate);
+            const currentScore = new Decimal(playerData.score);
 
-        // Update the score
-        const currentScore = new Decimal(playerData.score);
-        playerData.score = currentScore.plus(passiveIncome).toFixed(9);
+            playerData.score = currentScore.plus(passiveIncome).toFixed(9);
 
-        // Update the UI
+            incomeTimer = 0; // reset timer
+        }
+
         updateUI();
     }
-
-    animateCanvas();
 }
+
 // --- Initialization and Event Listeners ---
 async function init() {
     tg.ready();
