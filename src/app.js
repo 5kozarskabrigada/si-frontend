@@ -12,8 +12,6 @@ const cpsElement = document.getElementById('cps-stat');
 const perClickElement = document.getElementById('per-click-stat');
 const perSecondElement = document.getElementById('per-second-stat');
 const coinImageEl = document.getElementById('coinImage');
-const userProfilePicEl = document.getElementById('user-profile-pic'); // New
-const usernameEl = document.getElementById('username'); // New
 
 const pages = {
     clicker: document.getElementById('clicker'),
@@ -111,17 +109,6 @@ function updateUI() {
     perClickElement.textContent = clickValue.toFixed(9); // Use local Decimal
     perSecondElement.textContent = autoClickRate.toFixed(9); // Use local Decimal
 
-    if (usernameEl) {
-        usernameEl.textContent = playerData.username || playerData.first_name || 'Guest'; // Use DB username, then first_name, then 'Guest'
-    }
-    if (userProfilePicEl) {
-        if (playerData.profile_photo_url) {
-            userProfilePicEl.src = playerData.profile_photo_url;
-            userProfilePicEl.classList.remove('hidden');
-        } else {
-            userProfilePicEl.classList.add('hidden'); // Hide if no profile pic
-        }
-    }
 
 
     // Update upgrade buttons

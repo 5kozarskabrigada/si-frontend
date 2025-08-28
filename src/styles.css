@@ -377,9 +377,7 @@ body {
 }
 
 #coinImage {
-    width: 200px;
-    /* Define a base size */
-    height: 200px;
+    height: 100%;
     object-fit: contain;
     /* Ensure the whole image is visible */
     cursor: pointer;
