@@ -1,20 +1,9 @@
+// app.js - FINAL CANVAS-FREE AND COMPLETE VERSION
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
-const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this!
+const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this to your Render backend URL!
 const tg = window.Telegram.WebApp;
-
-const telegramUser = tg.initDataUnsafe?.user;
-
-const userInfo = {
-    id: telegramUser?.id || 'test-user-01',
-    username: telegramUser?.username || 'guest',
-    first_name: telegramUser?.first_name || '',
-    last_name: telegramUser?.last_name || '',
-    photo_url: telegramUser?.photo_url || '/assets/default-avatar.png'
-};
-
-console.log("Telegram User:", userInfo);
 
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
@@ -22,6 +11,7 @@ const scoreElement = document.getElementById('score');
 const cpsElement = document.getElementById('cps-stat');
 const perClickElement = document.getElementById('per-click-stat');
 const perSecondElement = document.getElementById('per-second-stat');
+const coinImageEl = document.getElementById('coinImage');
 
 const pages = {
     clicker: document.getElementById('clicker'),
@@ -47,6 +37,9 @@ let clickValue = new Decimal(0);
 const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
 let lastFrameTime = Date.now();
+let scale = 1; // For the bump effect
+const BUMP_AMOUNT = 1.05;
+const BUMP_RECOVERY = 0.04;
 
 // --- COMPLETE Frontend Upgrade Definitions ---
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
@@ -74,38 +67,24 @@ const upgrades = {
     }
 };
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'), 
-    click_tier_2: new Decimal('0.000001024'), 
-    click_tier_3: new Decimal('0.000016384'), 
-    click_tier_4: new Decimal('0.000262144'), 
-    click_tier_5: new Decimal('0.004194304'),
-
-    auto_tier_1: new Decimal('0.000000064'), 
-    auto_tier_2: new Decimal('0.000001024'), 
-    auto_tier_3: new Decimal('0.000016384'), 
-    auto_tier_4: new Decimal('0.000262144'), 
-    auto_tier_5: new Decimal('0.004194304'),
-
-    offline_tier_1: new Decimal('0.000000064'), 
-    offline_tier_2: new Decimal('0.000001024'), 
-    offline_tier_3: new Decimal('0.000016384'), 
-    offline_tier_4: new Decimal('0.000262144'), 
-    offline_tier_5: new Decimal('0.004194304'),
+    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'), click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'), click_tier_5: new Decimal('0.004194304'),
+    auto_tier_1: new Decimal('0.000000064'), auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'), auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
+    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
 };
 
+// --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
         const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (body) options.body = JSON.stringify(body);
         const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
-
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
+            throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
         }
-
         return await response.json();
     } catch (error) {
-        console.error('API request failed:', error);
+        console.error(`API request to ${endpoint} failed:`, error);
         throw error;
     }
 }
@@ -121,7 +100,6 @@ function showPage(pageId) {
 function updateUI() {
     if (!playerData) return;
 
-    // Read values directly from the playerData object
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
@@ -153,7 +131,7 @@ function generateUpgradesHTML() {
     };
     for (const type in containers) {
         if (!containers[type]) continue;
-        containers[type].innerHTML = ''; // Clear previous content
+        containers[type].innerHTML = '';
         for (const id in upgrades[type]) {
             const upgrade = upgrades[type][id];
             containers[type].innerHTML += `
@@ -181,8 +159,9 @@ function generateUpgradesHTML() {
 
 function openUpgradeTab(event) {
     const tabName = event.currentTarget.dataset.tab;
-    document.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.upgrade-tab-link').forEach(l => l.classList.remove('active'));
+    const upgradesPage = document.getElementById('upgrades');
+    upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
+    upgradesPage.querySelectorAll('.upgrade-tab-link').forEach(l => l.classList.remove('active'));
     document.getElementById(tabName).classList.add('active');
     event.currentTarget.classList.add('active');
 }
@@ -210,57 +189,24 @@ async function purchaseUpgrade(upgradeId) {
     }
 }
 
-
-const coinImageEl = document.getElementById('coinImage');
-let scale = 1;
-const BUMP_AMOUNT = 1.2;
-const BUMP_RECOVERY = 0.05;
-
-function updateImageScale() {
-    coinImageEl.style.transform = `scale(${scale})`;
-    if (scale > 1) {
-        scale = Math.max(1, scale - BUMP_RECOVERY);
-        requestAnimationFrame(updateImageScale);
-    }
-}
-
-coinImageEl.addEventListener('mousedown', () => {
-    if (!playerData) return;
-    const currentScore = new Decimal(playerData.score);
-    const clickAmount = new Decimal(playerData.click_value);
-    playerData.score = currentScore.plus(clickAmount).toFixed(9);
-    clicksThisSecond++;
-
-    tg.HapticFeedback.impactOccurred('light');
-
-    // bump animation
-    scale = BUMP_AMOUNT;
-    updateImageScale();
-});
-
-
-let incomeTimer = 0; // counts seconds
-
+// --- Main Game Loop ---
 function gameLoop() {
     requestAnimationFrame(gameLoop);
 
     const now = Date.now();
-    const delta = (now - lastFrameTime) / 1000; // seconds since last frame
+    const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
     if (playerData) {
-        // add passive income once per second
-        incomeTimer += delta;
-        if (incomeTimer >= 1) {
-            const passiveIncome = new Decimal(playerData.auto_click_rate);
-            const currentScore = new Decimal(playerData.score);
-
-            playerData.score = currentScore.plus(passiveIncome).toFixed(9);
-
-            incomeTimer = 0; // reset timer
-        }
-
+        const passiveIncome = autoClickRate.times(delta);
+        score = score.plus(passiveIncome);
+        playerData.score = score.toFixed(9);
         updateUI();
+    }
+
+    if (scale > 1) {
+        scale = Math.max(1, scale - BUMP_RECOVERY);
+        coinImageEl.style.transform = `scale(${scale})`;
     }
 }
 
@@ -274,18 +220,10 @@ async function init() {
         setupEventListeners();
         updateUI();
 
-        coinImage.onload = () => {
-            isImageReady = true;
-            setupCanvas();
-            // Start the game loop only after the image is fully ready
-            lastFrameTime = Date.now();
-            requestAnimationFrame(gameLoop);
-            loadingOverlay.classList.remove('active');
-        };
-        if (coinImage.complete) {
-            coinImage.onload();
-        }
+        lastFrameTime = Date.now();
+        requestAnimationFrame(gameLoop);
 
+        loadingOverlay.classList.remove('active');
     } catch (error) {
         console.error("Initialization failed:", error);
         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
@@ -299,23 +237,24 @@ function setupEventListeners() {
     document.querySelectorAll('.upgrade-tab-link').forEach(tab => {
         tab.onclick = openUpgradeTab;
     });
-    canvas.addEventListener('mousedown', (e) => {
+
+    coinImageEl.addEventListener('mousedown', () => {
         if (!playerData) return;
-        const currentScore = new Decimal(playerData.score);
-        const clickAmount = new Decimal(playerData.click_value);
-        playerData.score = currentScore.plus(clickAmount).toFixed(9);
+        score = score.plus(clickValue);
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
         scale = BUMP_AMOUNT;
+        coinImageEl.style.transform = `scale(${scale})`;
     });
+
     setInterval(() => {
         cpsElement.textContent = `${clicksThisSecond} CPS`;
         clicksThisSecond = 0;
     }, 1000);
+
     setInterval(() => {
-        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: playerData.score });
+        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
     }, SYNC_INTERVAL);
-    window.addEventListener('resize', setupCanvas);
 }
 
 // --- Start the game ---
