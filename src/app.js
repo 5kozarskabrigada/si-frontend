@@ -40,7 +40,8 @@ const userInfo = {
 
 
 // --- Game State & Constants ---
-const userId = tg.initDataUnsafe?.user?.id ?? Date.now(); // numeric fallback
+let userId = tg.initDataUnsafe?.user?.id ?? Date.now(); // numeric fallback
+
 
 const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest'; // New
 let playerData = null;
@@ -261,10 +262,15 @@ async function syncProfile() {
 
 // --- Initialization and Event Listeners ---
 async function init() {
+    let userId; // declare here
+
     tg.ready(() => {
         tg.expand();
-        initGame(); // your init() function
+        const u = tg?.initDataUnsafe?.user;
+        userId = u?.id ?? Date.now();
+        initGame();
     });
+    
     tg.expand();
 
     // ensure we have the final Telegram user id
