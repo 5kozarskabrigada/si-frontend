@@ -1,4 +1,3 @@
-// app.js - FINAL FIXED VERSION
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
@@ -92,6 +91,8 @@ function showPage(pageId) {
 
 function updateUI() {
     if (!playerData) return;
+
+    // Read values directly from the playerData object
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
@@ -184,7 +185,7 @@ async function purchaseUpgrade(upgradeId) {
 const coinImage = new Image();
 coinImage.src = '/assets/skin1.png';
 let scale = 1;
-let isImageReady = false; // Flag to ensure image is loaded before drawing
+let isImageReady = false;
 const BUMP_AMOUNT = 1.05;
 const BUMP_RECOVERY = 0.04;
 
@@ -199,9 +200,8 @@ function setupCanvas() {
     }
 }
 
-// FEATURE CHANGE: Simplified animation, no more distortion
 function animateCanvas() {
-    if (!isImageReady) return; // Guard clause
+    if (!isImageReady) return;
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.save();
@@ -210,26 +210,24 @@ function animateCanvas() {
     ctx.translate(-rect.width / 2, -rect.height / 2);
     ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
     ctx.restore();
-
-    // Smoothly return scale to 1
     if (scale > 1) {
-        scale -= BUMP_RECOVERY;
-        if (scale < 1) scale = 1;
+        scale = Math.max(1, scale - BUMP_RECOVERY);
     }
 }
 
 // --- Main Game Loop ---
 function gameLoop() {
     requestAnimationFrame(gameLoop);
+
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
     if (playerData) {
-        const passiveIncome = autoClickRate.times(delta);
-        score = score.plus(passiveIncome);
-        playerData.score = score.toFixed(9); // Keep local data in sync for syncs
-        updateUI();
+        const passiveIncome = new Decimal(playerData.auto_click_rate).times(delta);
+        const currentScore = new Decimal(playerData.score);
+        playerData.score = currentScore.plus(passiveIncome).toFixed(9); // Update the master data object
+        updateUI(); // Redraw everything based on the master data
     }
 
     animateCanvas();
@@ -245,7 +243,6 @@ async function init() {
         setupEventListeners();
         updateUI();
 
-        // BUG FIX: The foolproof image loading sequence
         coinImage.onload = () => {
             isImageReady = true;
             setupCanvas();
@@ -254,7 +251,6 @@ async function init() {
             requestAnimationFrame(gameLoop);
             loadingOverlay.classList.remove('active');
         };
-        // If image is already cached by the browser, the onload event might not fire, so we trigger it manually.
         if (coinImage.complete) {
             coinImage.onload();
         }
@@ -274,17 +270,19 @@ function setupEventListeners() {
     });
     canvas.addEventListener('mousedown', (e) => {
         if (!playerData) return;
-        score = score.plus(clickValue);
+        const currentScore = new Decimal(playerData.score);
+        const clickAmount = new Decimal(playerData.click_value);
+        playerData.score = currentScore.plus(clickAmount).toFixed(9);
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
-        scale = BUMP_AMOUNT; // Trigger the bump effect
+        scale = BUMP_AMOUNT;
     });
     setInterval(() => {
         cpsElement.textContent = `${clicksThisSecond} CPS`;
         clicksThisSecond = 0;
     }, 1000);
     setInterval(() => {
-        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: playerData.score });
     }, SYNC_INTERVAL);
     window.addEventListener('resize', setupCanvas);
 }
