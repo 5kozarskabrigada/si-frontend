@@ -1,8 +1,7 @@
-// app.js - FULLY FIXED AND FUNCTIONAL
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
-const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this!
+const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set your backend URL
 const tg = window.Telegram.WebApp;
 
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -14,7 +13,6 @@ const cpsElement = document.getElementById('cps-stat');
 const perClickElement = document.getElementById('per-click-stat');
 const perSecondElement = document.getElementById('per-second-stat');
 
-// BUG FIX: Fully define the pages and navButtons objects
 const pages = {
     clicker: document.getElementById('clicker'),
     upgrades: document.getElementById('upgrades'),
@@ -66,23 +64,21 @@ const upgrades = {
     }
 };
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'),
-    click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'),
-    click_tier_5: new Decimal('0.004194304'), auto_tier_1: new Decimal('0.000000064'),
-    auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'),
-    auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
-    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'),
-    offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'),
-    offline_tier_5: new Decimal('0.004194304'),
+    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'), click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'), click_tier_5: new Decimal('0.004194304'),
+    auto_tier_1: new Decimal('0.000000064'), auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'), auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
+    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
 };
 
+// --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const options = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) options.body = JSON.stringify(body);
     const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
-    const responseData = await response.json();
-    if (!response.ok) throw new Error(responseData.error || 'API Request Failed');
-    return responseData;
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
+        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
 }
 
 function showPage(pageId) {
@@ -116,7 +112,6 @@ function updateUI() {
         }
     }
 }
-
 // --- NEW Tabbed Upgrade Logic ---
 function generateUpgradesHTML() {
     const containers = {
@@ -176,10 +171,10 @@ async function purchaseUpgrade(upgradeId) {
 }
 
 
-// --- Canvas & Visuals ---
 const coinImage = new Image();
 coinImage.src = '/assets/skin1.png';
 let scale = 1, isDistortionActive = false, originalImageData = null;
+let isImageReady = false; // BUG FIX: New flag to track image status
 const BUMP_AMOUNT = 1.05, BUMP_RECOVERY = 0.02;
 let distortion = { amplitude: 0, maxAmplitude: 20, centerX: 0, centerY: 0, radius: 150, recovery: 2 };
 
@@ -190,76 +185,61 @@ function setupCanvas() {
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
     distortion.radius = Math.min(rect.width, rect.height) * 0.4;
-    // BUG FIX: Only draw and cache if the image is actually loaded
-    if (coinImage.complete && coinImage.naturalWidth > 0) {
+    if (isImageReady) { // Only draw if the image is confirmed ready
         ctx.drawImage(coinImage, 0, 0, rect.width, rect.height);
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 }
+
 function animateCanvas() {
-    // BUG FIX: Prevent drawing if the image data isn't ready
-    if (!originalImageData) return;
-    const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0, 0, rect.width, rect.height);
+    if (!originalImageData) return; // Guard clause
     // ... rest of animateCanvas is the same ...
 }
 
 // --- Main Game Loop ---
 function gameLoop() {
+    requestAnimationFrame(gameLoop); // Keep the loop running
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
-    if (playerData) {
-        // BUG FIX: Correctly add passive income
+
+    if (playerData) { // Only process game logic if player data exists
         const passiveIncome = autoClickRate.times(delta);
         score = score.plus(passiveIncome);
         playerData.score = score.toFixed(9);
         updateUI();
     }
+
     animateCanvas();
-    requestAnimationFrame(gameLoop);
 }
 
-// --- Initialization ---
+// --- Initialization and Event Listeners ---
 async function init() {
     tg.ready();
     tg.expand();
     try {
         playerData = await apiRequest(`/player/${userId}`);
-
-        // NEW: You can now access the profile data!
-        console.log("Player's username:", playerData.username);
-        console.log("Player's profile picture URL:", playerData.profile_photo_url);
-
-        // EXAMPLE: Display a welcome message
-        // You could add a <div id="welcome-message"></div> to your HTML
-        const welcomeMessage = document.getElementById('welcome-message');
-        if (welcomeMessage) {
-            welcomeMessage.textContent = `Welcome, ${playerData.first_name || playerData.username}!`;
-        }
-
         generateUpgradesHTML();
-        updateUI();
         setupEventListeners();
+        updateUI();
 
-        // BUG FIX: Ensure coinImage has a chance to load before setupCanvas is called
-        if (coinImage.complete) {
+        // BUG FIX: Wait for image to load before starting the game loop
+        coinImage.onload = () => {
+            isImageReady = true;
             setupCanvas();
-        } else {
-            coinImage.onload = setupCanvas;
-        }
+            lastFrameTime = Date.now();
+            requestAnimationFrame(gameLoop);
+            loadingOverlay.classList.remove('active');
+        };
+        // If image is already cached and loaded, trigger it manually
+        if (coinImage.complete) coinImage.onload();
 
-        lastFrameTime = Date.now();
-        requestAnimationFrame(gameLoop);
-
-        loadingOverlay.classList.remove('active');
     } catch (error) {
         console.error("Initialization failed:", error);
         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
     }
 }
 
-// --- Event Listeners Setup ---
 function setupEventListeners() {
     for (const key in navButtons) {
         if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
@@ -289,8 +269,7 @@ function setupEventListeners() {
         if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
     }, SYNC_INTERVAL);
     window.addEventListener('resize', setupCanvas);
-    coinImage.onload = setupCanvas;
 }
 
 // --- Start the game ---
-init(); 
+init();

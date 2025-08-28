@@ -1,4 +1,4 @@
-/* styles.css - FULLY REDESIGNED */
+/* styles.css - FINAL REDESIGNED VERSION */
 :root {
     font-size: 14px;
     --bg-primary: #0f0d17;
@@ -237,7 +237,6 @@ body {
 
 .nav-btn svg {
     fill: var(--text-secondary);
-    /* DESIGN CHANGE: Use fill for SVG color */
     width: 28px;
     height: 28px;
     transition: fill 0.2s ease;
@@ -247,6 +246,7 @@ body {
     font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-secondary);
+    transition: color 0.2s ease;
 }
 
 .nav-btn.active svg {
@@ -259,17 +259,26 @@ body {
 
 /* --- Upgrades Page --- */
 .page-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
     font-size: 1.75rem;
     text-align: center;
     margin-bottom: 1.5rem;
     font-weight: 800;
-    /* DESIGN CHANGE: Gradient Title */
     background: linear-gradient(45deg, var(--primary-accent), var(--light-purple));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
 
+.title-icon {
+    font-size: 1.5rem;
+    color: var(--primary-accent);
+}
+
+/* Icon next to title */
 .upgrade-nav {
     display: flex;
     justify-content: center;
