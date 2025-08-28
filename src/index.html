@@ -1,79 +1,86 @@
-<!-- index.html -->
+<!-- index.html - FIXED VERSION -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>Sisi Clicker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sisi Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <!-- CRITICAL: Add the decimal.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
-    <div class="game">
-        <div class="canvas-container">
-            <canvas id="circleCanvas"></canvas>
+    <!-- NEW: Loading overlay for better user experience -->
+    <div id="loading-overlay" class="active">
+        <div class="loading-spinner"></div>
+        <div id="loading-text">Connecting...</div>
+    </div>
+
+    <div id="app">
+        <div class="app-content">
+            <!-- CLICKER PAGE -->
+            <section id="clicker" class="page active">
+                <div class="canvas-container">
+                    <canvas id="circleCanvas"></canvas>
+                </div>
+                <div class="stats-container">
+                    <div class="stats-header">
+                        <div id="score" class="total-coins">0.000000000</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">PER CLICK</div>
+                            <div class="stat-value"><span id="per-click-stat">0</span></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">PER SECOND</div>
+                            <div class="stat-value"><span id="per-second-stat">0</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="cps-display-container">
+                    <span id="cps-stat">0 CPS</span>
+                </div>
+            </section>
+
+            <!-- UPGRADES PAGE -->
+            <section id="upgrades" class="page">
+                <h1 class="page-title">⚙️ Upgrades</h1>
+                <div id="upgrades-container"></div>
+            </section>
+
+            <!-- OTHER PAGES (Placeholders) -->
+            <section id="tasks" class="page">
+                <h1 class="page-title">🎯 Tasks</h1>
+            </section>
+            <section id="skins" class="page">
+                <h1 class="page-title">🎨 Skins</h1>
+            </section>
+            <section id="transactions" class="page">
+                <h1 class="page-title">💸 Wallet</h1>
+            </section>
         </div>
 
-        <header class="stats">
-            <div class="score-display">
-                <img id="score-icon" src="/assets/coin.png" alt="coin">
-                <h2 class="score">LOADING...</h2>
-            </div>
-            <div class="info-bar">
-                <span class="info-stat per-click-stat">Per Click: 0</span>
-                <span class="info-stat per-second-stat">Per Second: 0</span>
-                <span class="info-stat cps-stat">CPS: 0</span>
-            </div>
-        </header>
-
-        <nav class="nav-bar">
-            <button class="nav-button active" id="nav-clicker">
-                <!-- SVG Icon for Clicker -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M12.63,2.18L4.25,10.56C3.9,10.9 3.9,11.45 4.25,11.79L12.63,20.18C12.98,20.53 13.53,20.53 13.88,20.18L22.26,11.79C22.61,11.45 22.61,10.9 22.26,10.56L13.88,2.18C13.53,1.83 12.98,1.83 12.63,2.18M11,6.27L18.73,14H3.27L11,6.27Z" />
-                </svg>
-                <span>Clicker</span>
-            </button>
-            <button class="nav-button" id="nav-upgrades">
-                <!-- SVG Icon for Upgrades -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M4,11V13H11L11,19.93L12.5,21.43L14,19.93L14,13H20V11H4M12.5,2.57L14,4.07L14,10H11L11,4.07L12.5,2.57Z" />
-                </svg>
-                <span>Upgrades</span>
-            </button>
-            <button class="nav-button" id="nav-tasks">
-                <!-- SVG Icon for Tasks -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M20.5,14.5L19,16L15,12L19,8L20.5,9.5L18,12L20.5,14.5M3,4H13A1,1 0 0,1 14,5V9A1,1 0 0,1 13,10H3A1,1 0 0,1 2,9V5A1,1 0 0,1 3,4M3,14H13A1,1 0 0,1 14,15V19A1,1 0 0,1 13,20H3A1,1 0 0,1 2,19V15A1,1 0 0,1 3,14Z" />
-                </svg>
-                <span>Tasks</span>
-            </button>
-            <button class="nav-button" id="nav-skins">
-                <!-- SVG Icon for Skins -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12,3L2,12L5,15L12,8L19,15L22,12L12,3M5,17L7,19H17L19,17V15L12,8L5,15V17Z" />
-                </svg>
-                <span>Skins</span>
-            </button>
-            <button class="nav-button" id="nav-transactions">
-                <!-- SVG Icon for Transactions -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                        d="M17,17.5C17,16.04 15.46,14.89 13.82,14.65L12,14.28L10.18,14.65C8.54,14.89 7,16.04 7,17.5V20H17V17.5M12,6A4,4 0 0,1 16,10C16,12.21 12,15.5 12,15.5C12,15.5 8,12.21 8,10A4,4 0 0,1 12,6M3,4H21V2H3V4Z" />
-                </svg>
-                <span>Transactions</span>
-            </button>
+        <nav class="bottom-nav">
+            <button id="nav-upgrades" class="nav-btn"><span class="nav-icon">⚡️</span><span
+                    class="nav-text">Upgrades</span></button>
+            <button id="nav-tasks" class="nav-btn"><span class="nav-icon">🎯</span><span
+                    class="nav-text">Tasks</span></button>
+            <button id="nav-clicker" class="nav-btn active"><span class="nav-icon">🖱️</span><span
+                    class="nav-text">Click</span></button>
+            <button id="nav-skins" class="nav-btn"><span class="nav-icon">🎨</span><span
+                    class="nav-text">Skins</span></button>
+            <button id="nav-transactions" class="nav-btn"><span class="nav-icon">💸</span><span
+                    class="nav-text">Wallet</span></button>
         </nav>
     </div>
-    <script src="app.js" defer></script>
+    <script src="app.js"></script>
 </body>
 
 </html>
