@@ -2,7 +2,7 @@
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
-const BACKEND_URL = 'YOUR_RENDER_URL_HERE'; // IMPORTANT: Set this!
+const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this!
 const tg = window.Telegram.WebApp;
 
 const loadingOverlay = document.getElementById('loading-overlay');
