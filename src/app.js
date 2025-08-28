@@ -28,6 +28,20 @@ const navButtons = {
     transactions: document.getElementById('nav-transactions'),
 };
 
+
+const userInfo = {
+    user_id: tg.initDataUnsafe?.user?.id,
+    username: tg.initDataUnsafe?.user?.username,
+    first_name: tg.initDataUnsafe?.user?.first_name,
+    last_name: tg.initDataUnsafe?.user?.last_name,
+    language_code: tg.initDataUnsafe?.user?.language_code,
+    photo_url: tg.initDataUnsafe?.user?.photo_url
+};
+
+// Save to backend
+await apiRequest('/player/syncProfile', 'POST', userInfo);
+
+
 // --- Game State & Constants ---
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
 const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest'; // New
