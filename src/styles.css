@@ -1,14 +1,13 @@
-/* styles.css - MERGED VERSION */
+/* styles.css - FULLY REDESIGNED */
 :root {
     font-size: 14px;
     --bg-primary: #0f0d17;
-    --bg-surface: rgba(15, 13, 23, 0.7);
     --bg-surface-solid: #171622;
-    --primary-accent: #7622f3;
-    --primary-accent-glow: rgba(118, 34, 243, 0.3);
+    --primary-accent: #8e44ad;
+    --primary-accent-glow: rgba(142, 68, 173, 0.3);
     --text-primary: #e6edf3;
     --text-secondary: #8b949e;
-    --border-color: rgba(243, 240, 252, 0.1);
+    --border-color: rgba(142, 68, 173, 0.2);
     --border-radius: 1rem;
     --font-family: 'Inter', sans-serif;
     color-scheme: dark;
@@ -75,12 +74,43 @@ body {
     }
 }
 
-.page-title {
-    font-size: 1.75rem;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-weight: 800;
-    color: var(--primary-accent);
+/* --- Loading Overlay --- */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    gap: 1rem;
+}
+
+#loading-overlay:not(.active) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- Core Clicker Page Styles --- */
@@ -108,11 +138,12 @@ body {
     transform: translateX(-50%);
     width: 90%;
     max-width: 400px;
-    background: var(--bg-surface);
+    /* DESIGN CHANGE: Translucent Glass Effect */
+    background: rgba(15, 13, 23, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     padding: 1.25rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     z-index: 10;
@@ -157,7 +188,6 @@ body {
 #cps-display-container {
     position: absolute;
     bottom: calc(6rem + 1rem);
-    /* Above nav bar */
     left: 50%;
     transform: translateX(-50%);
     background: rgba(15, 13, 23, 0.8);
@@ -182,14 +212,15 @@ body {
     left: 0;
     right: 0;
     height: auto;
-    background: rgba(18, 18, 18, 0.85);
+    /* DESIGN CHANGE: Translucent Glass Effect */
+    background: rgba(18, 18, 25, 0.75);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
     z-index: 100;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
 }
 
 .nav-btn {
@@ -219,7 +250,27 @@ body {
     color: var(--primary-accent);
 }
 
+/* DESIGN CHANGE: Make nav icons purple */
+.nav-btn svg {
+    width: 28px;
+    height: 28px;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.nav-btn.active svg {
+    color: var(--primary-accent);
+}
+
 /* --- Upgrades Page --- */
+.page-title {
+    font-size: 1.75rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-accent);
+}
+
 #upgrades-container {
     display: flex;
     flex-direction: column;
@@ -230,7 +281,7 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: var(--bg-surface);
+    background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 1.25rem;
@@ -253,60 +304,23 @@ body {
 
 .upgrade-action button {
     width: 100%;
+    min-width: 120px;
     padding: 1rem;
     font-size: 1rem;
     font-weight: 700;
     color: white;
     background: var(--primary-accent);
     border: none;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius);
     cursor: pointer;
 }
 
 .upgrade-action button:disabled {
-    background: var(--bg-surface-solid);
-    color: var(--text-secondary);
+    background: #333;
+    color: #777;
     cursor: not-allowed;
 }
 
 .cost {
     font-size: 0.9rem;
-}
-
-#loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-primary);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-    gap: 1rem;
-}
-
-#loading-overlay:not(.active) {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--border-color);
-    border-top-color: var(--primary-accent);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }

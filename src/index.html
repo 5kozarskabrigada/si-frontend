@@ -1,4 +1,4 @@
-<!-- index.html - FIXED VERSION -->
+<!-- index.html - REVISED -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,13 +10,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
-    <!-- CRITICAL: Add the decimal.js library -->
     <script src="https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
-    <!-- NEW: Loading overlay for better user experience -->
     <div id="loading-overlay" class="active">
         <div class="loading-spinner"></div>
         <div id="loading-text">Connecting...</div>
@@ -24,7 +22,6 @@
 
     <div id="app">
         <div class="app-content">
-            <!-- CLICKER PAGE -->
             <section id="clicker" class="page active">
                 <div class="canvas-container">
                     <canvas id="circleCanvas"></canvas>
@@ -48,14 +45,10 @@
                     <span id="cps-stat">0 CPS</span>
                 </div>
             </section>
-
-            <!-- UPGRADES PAGE -->
             <section id="upgrades" class="page">
                 <h1 class="page-title">⚙️ Upgrades</h1>
                 <div id="upgrades-container"></div>
             </section>
-
-            <!-- OTHER PAGES (Placeholders) -->
             <section id="tasks" class="page">
                 <h1 class="page-title">🎯 Tasks</h1>
             </section>
