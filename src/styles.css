@@ -360,10 +360,69 @@ body {
     font-size: 0.9rem;
 }
 
+#clicker-container {
+    display: flex;
+    /* Use flexbox to center the image */
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: calc(100% - 150px);
+    /* Adjust height to give space for stats and nav */
+    position: absolute;
+    /* Position relative to the parent page */
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    /* Hide any overflow if image scales too large */
+}
+
 #coinImage {
     width: 200px;
+    /* Define a base size */
     height: 200px;
+    object-fit: contain;
+    /* Ensure the whole image is visible */
     cursor: pointer;
     transition: transform 0.1s ease-out;
+    /* Keep the existing transition */
     user-select: none;
+    z-index: 5;
+    /* Ensure it's above other elements if needed */
+}
+
+
+#user-info-bar {
+    position: absolute;
+    top: 1.5rem;
+    /* Adjust as needed */
+    left: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(15, 13, 23, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 2rem;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    z-index: 20;
+    /* Ensure it's on top */
+}
+
+#user-profile-pic {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--primary-accent);
+}
+
+#user-profile-pic.hidden {
+    display: none;
+}
+
+#username {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }

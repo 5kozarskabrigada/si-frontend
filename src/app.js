@@ -12,6 +12,8 @@ const cpsElement = document.getElementById('cps-stat');
 const perClickElement = document.getElementById('per-click-stat');
 const perSecondElement = document.getElementById('per-second-stat');
 const coinImageEl = document.getElementById('coinImage');
+const userProfilePicEl = document.getElementById('user-profile-pic'); // New
+const usernameEl = document.getElementById('username'); // New
 
 const pages = {
     clicker: document.getElementById('clicker'),
@@ -30,6 +32,7 @@ const navButtons = {
 
 // --- Game State & Constants ---
 const userId = tg.initDataUnsafe?.user?.id || 'test-user-01';
+const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest'; // New
 let playerData = null;
 let score = new Decimal(0);
 let autoClickRate = new Decimal(0);
@@ -100,14 +103,28 @@ function showPage(pageId) {
 function updateUI() {
     if (!playerData) return;
 
-    score = new Decimal(playerData.score);
-    clickValue = new Decimal(playerData.click_value);
-    autoClickRate = new Decimal(playerData.auto_click_rate);
+    // Update score from current game state (the Decimal object)
+    scoreElement.textContent = score.toFixed(9); // Display with fixed precision
 
-    scoreElement.textContent = score.toFixed(9);
-    perClickElement.textContent = clickValue.toFixed(9);
-    perSecondElement.textContent = autoClickRate.toFixed(9);
+    // Update per click/per second values from player data
+    // These should reflect the current 'static' values, not a real-time count
+    perClickElement.textContent = clickValue.toFixed(9); // Use local Decimal
+    perSecondElement.textContent = autoClickRate.toFixed(9); // Use local Decimal
 
+    if (usernameEl) {
+        usernameEl.textContent = playerData.username || playerData.first_name || 'Guest'; // Use DB username, then first_name, then 'Guest'
+    }
+    if (userProfilePicEl) {
+        if (playerData.profile_photo_url) {
+            userProfilePicEl.src = playerData.profile_photo_url;
+            userProfilePicEl.classList.remove('hidden');
+        } else {
+            userProfilePicEl.classList.add('hidden'); // Hide if no profile pic
+        }
+    }
+
+
+    // Update upgrade buttons
     for (const type in upgrades) {
         for (const id in upgrades[type]) {
             const level = new Decimal(playerData[`${id}_level`] || 0);
@@ -170,21 +187,30 @@ async function purchaseUpgrade(upgradeId) {
     const btn = document.getElementById(`${upgradeId}_btn`);
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = 'Purchasing...';
+
     try {
         const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
         playerData = player;
+        // Update local game state based on new player data
+        score = new Decimal(playerData.score);
+        clickValue = new Decimal(playerData.click_value);
+        autoClickRate = new Decimal(playerData.auto_click_rate);
         updateUI();
+
         tg.HapticFeedback.notificationOccurred('success');
         btn.innerHTML = 'Success!';
-    } catch (error) {
+    } 
+    
+    catch (error) {
         console.error('Upgrade failed:', error);
         tg.HapticFeedback.notificationOccurred('error');
         btn.innerHTML = 'Not Enough Coins';
-    } finally {
+    } 
+    
+    finally {
         setTimeout(() => {
             btn.innerHTML = originalText;
-            updateUI();
+            updateUI(); // Re-enable button if enough score, or keep disabled if not.
         }, 1000);
     }
 }
@@ -198,10 +224,11 @@ function gameLoop() {
     lastFrameTime = now;
 
     if (playerData) {
+        // Use the local autoClickRate (which is kept in sync with playerData)
         const passiveIncome = autoClickRate.times(delta);
         score = score.plus(passiveIncome);
-        playerData.score = score.toFixed(9);
-        updateUI();
+        // Do NOT update playerData.score here; it will be synced periodically
+        updateUI(); // This is crucial for real-time score display
     }
 
     if (scale > 1) {
@@ -209,16 +236,19 @@ function gameLoop() {
         coinImageEl.style.transform = `scale(${scale})`;
     }
 }
-
 // --- Initialization and Event Listeners ---
 async function init() {
     tg.ready();
     tg.expand();
     try {
         playerData = await apiRequest(`/player/${userId}`);
+        score = new Decimal(playerData.score);
+        clickValue = new Decimal(playerData.click_value);
+        autoClickRate = new Decimal(playerData.auto_click_rate);
+
         generateUpgradesHTML();
         setupEventListeners();
-        updateUI();
+        updateUI(); // Initial UI update
 
         lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
@@ -240,18 +270,20 @@ function setupEventListeners() {
 
     coinImageEl.addEventListener('mousedown', () => {
         if (!playerData) return;
-        score = score.plus(clickValue);
+        score = score.plus(clickValue); // Use local clickValue
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
         scale = BUMP_AMOUNT;
         coinImageEl.style.transform = `scale(${scale})`;
+        updateUI(); // Update score immediately on click
     });
 
     setInterval(() => {
         cpsElement.textContent = `${clicksThisSecond} CPS`;
-        clicksThisSecond = 0;
+        clicksThisSecond = 0; // Reset manual clicks per second
     }, 1000);
 
+    // Sync only the score and last_updated to the backend
     setInterval(() => {
         if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
     }, SYNC_INTERVAL);
