@@ -238,10 +238,43 @@ function gameLoop() {
     }
 }
 // --- Initialization and Event Listeners ---
+function getTWAUser() {
+    const u = tg?.initDataUnsafe?.user;
+    if (!u) return null;
+    return {
+        user_id: u.id,
+        username: u.username ?? null,
+        first_name: u.first_name ?? null,
+        last_name: u.last_name ?? null,
+        language_code: u.language_code ?? null,
+        photo_url: u.photo_url ?? null, // backend maps this to profile_photo_url
+    };
+}
+
+async function syncProfile() {
+    const info = getTWAUser();
+    if (!info) return; // skip if not in Telegram
+    try {
+        await apiRequest('/player/syncProfile', 'POST', info);
+    } catch (e) {
+        console.warn('Profile sync failed:', e?.message || e);
+    }
+}
+
+// --- Initialization and Event Listeners ---
 async function init() {
     tg.ready();
     tg.expand();
+
+    // ensure we have the final Telegram user id
+    const u = tg?.initDataUnsafe?.user;
+    if (u?.id) userId = u.id;
+
+    // 1) sync Telegram profile to DB (username, names, photo, language)
+    await syncProfile();
+
     try {
+        // 2) now load/create the player row
         playerData = await apiRequest(`/player/${userId}`);
         score = new Decimal(playerData.score);
         clickValue = new Decimal(playerData.click_value);
@@ -249,7 +282,7 @@ async function init() {
 
         generateUpgradesHTML();
         setupEventListeners();
-        updateUI(); // Initial UI update
+        updateUI();
 
         lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
@@ -260,6 +293,7 @@ async function init() {
         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
     }
 }
+
 
 function setupEventListeners() {
     for (const key in navButtons) {
