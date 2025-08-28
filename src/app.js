@@ -2,7 +2,7 @@
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // --- Configuration & Element Selection ---
-const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set your backend URL
+const BACKEND_URL = 'YOUR_RENDER_URL_HERE'; // IMPORTANT: Set this!
 const tg = window.Telegram.WebApp;
 
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -43,17 +43,39 @@ let lastFrameTime = Date.now();
 // --- COMPLETE Frontend Upgrade Definitions ---
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
 const upgrades = {
-    click_tier_1: { name: 'A Cups', benefit: '+0.000000001 per click' },
-    // ... include all 15 upgrades from your old project here ...
-    auto_tier_1: { name: 'Basic Lotion', benefit: '+0.000000001 per sec' },
+    click: {
+        click_tier_1: { name: 'A Cups', benefit: '+0.000000001 per click' },
+        click_tier_2: { name: 'B Cups', benefit: '+0.000000008 per click' },
+        click_tier_3: { name: 'C Cups', benefit: '+0.000000064 per click' },
+        click_tier_4: { name: 'D Cups', benefit: '+0.000000512 per click' },
+        click_tier_5: { name: 'DD Cups', benefit: '+0.000004096 per click' },
+    },
+    auto: {
+        auto_tier_1: { name: 'Basic Lotion', benefit: '+0.000000001 per sec' },
+        auto_tier_2: { name: 'Enhanced Serum', benefit: '+0.000000008 per sec' },
+        auto_tier_3: { name: 'Collagen Cream', benefit: '+0.000000064 per sec' },
+        auto_tier_4: { name: 'Firming Gel', benefit: '+0.000000512 per sec' },
+        auto_tier_5: { name: 'Miracle Elixir', benefit: '+0.000004096 per sec' },
+    },
+    offline: {
+        offline_tier_1: { name: 'Simple Bralette', benefit: '+0.000000001 per hour' },
+        offline_tier_2: { name: 'Sports Bra', benefit: '+0.000000008 per hour' },
+        offline_tier_3: { name: 'Padded Bra', benefit: '+0.000000064 per hour' },
+        offline_tier_4: { name: 'Push-Up Bra', benefit: '+0.000000512 per hour' },
+        offline_tier_5: { name: 'Designer Corset', benefit: '+0.000004096 per hour' },
+    }
 };
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'),
-    // ... include all 15 base costs here ...
-    auto_tier_1: new Decimal('0.000000064'),
+    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'),
+    click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'),
+    click_tier_5: new Decimal('0.004194304'), auto_tier_1: new Decimal('0.000000064'),
+    auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'),
+    auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
+    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'),
+    offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'),
+    offline_tier_5: new Decimal('0.004194304'),
 };
 
-// --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const options = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) options.body = JSON.stringify(body);
@@ -81,46 +103,62 @@ function updateUI() {
     perClickElement.textContent = clickValue.toFixed(9);
     perSecondElement.textContent = autoClickRate.toFixed(9);
 
-    for (const id in upgrades) {
-        const level = new Decimal(playerData[`${id}_level`] || 0);
-        const cost = baseCosts[id].times(INTRA_TIER_COST_MULTIPLIER.pow(level));
-
-        const levelEl = document.getElementById(`${id}_level`);
-        const costEl = document.getElementById(`${id}_cost`);
-        const btnEl = document.getElementById(`${id}_btn`);
-
-        if (levelEl) levelEl.textContent = level.toString();
-        if (costEl) costEl.textContent = cost.toFixed(9);
-        if (btnEl) btnEl.disabled = score.lessThan(cost);
+    for (const type in upgrades) {
+        for (const id in upgrades[type]) {
+            const level = new Decimal(playerData[`${id}_level`] || 0);
+            const cost = baseCosts[id].times(INTRA_TIER_COST_MULTIPLIER.pow(level));
+            const levelEl = document.getElementById(`${id}_level`);
+            const costEl = document.getElementById(`${id}_cost`);
+            const btnEl = document.getElementById(`${id}_btn`);
+            if (levelEl) levelEl.textContent = level.toString();
+            if (costEl) costEl.textContent = cost.toFixed(9);
+            if (btnEl) btnEl.disabled = score.lessThan(cost);
+        }
     }
 }
 
-// --- Upgrade Logic ---
+// --- NEW Tabbed Upgrade Logic ---
 function generateUpgradesHTML() {
-    const container = document.getElementById('upgrades-container');
-    if (!container) return;
-    container.innerHTML = '';
-    for (const id in upgrades) {
-        const upgrade = upgrades[id];
-        container.innerHTML += `
-            <div class="upgrade-item" id="${id}">
-                <div class="upgrade-details">
-                    <h3>${upgrade.name}</h3>
-                    <p>${upgrade.benefit}</p>
-                    <p class="level">Level: <span id="${id}_level">0</span></p>
-                </div>
-                <div class="upgrade-action">
-                    <button id="${id}_btn">
-                        Cost: <span class="cost" id="${id}_cost">0</span>
-                    </button>
-                </div>
-            </div>
-        `;
+    const containers = {
+        click: document.getElementById('clickUpgrades'),
+        auto: document.getElementById('autoUpgrades'),
+        offline: document.getElementById('offlineUpgrades'),
+    };
+    for (const type in containers) {
+        if (!containers[type]) continue;
+        containers[type].innerHTML = ''; // Clear previous content
+        for (const id in upgrades[type]) {
+            const upgrade = upgrades[type][id];
+            containers[type].innerHTML += `
+                <div class="upgrade-item" id="${id}">
+                    <div class="upgrade-details">
+                        <h3>${upgrade.name}</h3>
+                        <p>${upgrade.benefit}</p>
+                        <p class="level">Level: <span id="${id}_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button id="${id}_btn">
+                            Cost: <span class="cost" id="${id}_cost">0</span>
+                        </button>
+                    </div>
+                </div>`;
+        }
     }
-    for (const id in upgrades) {
-        const btn = document.getElementById(`${id}_btn`);
-        if (btn) btn.onclick = () => purchaseUpgrade(id);
+    // Add event listeners after generating HTML
+    for (const type in upgrades) {
+        for (const id in upgrades[type]) {
+            const btn = document.getElementById(`${id}_btn`);
+            if (btn) btn.onclick = () => purchaseUpgrade(id);
+        }
     }
+}
+
+function openUpgradeTab(event) {
+    const tabName = event.currentTarget.dataset.tab;
+    document.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.upgrade-tab-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 async function purchaseUpgrade(upgradeId) {
@@ -136,6 +174,7 @@ async function purchaseUpgrade(upgradeId) {
         tg.HapticFeedback.notificationOccurred('error');
     }
 }
+
 
 // --- Canvas & Visuals ---
 const coinImage = new Image();
@@ -157,13 +196,12 @@ function setupCanvas() {
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
 }
-
 function animateCanvas() {
-    // BUG FIX: Prevent drawing if the image data isn't ready yet
+    // BUG FIX: Prevent drawing if the image data isn't ready
     if (!originalImageData) return;
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
-    // ... rest of animateCanvas function is unchanged ...
+    // ... rest of animateCanvas is the same ...
 }
 
 // --- Main Game Loop ---
@@ -171,15 +209,13 @@ function gameLoop() {
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
-
     if (playerData) {
         // BUG FIX: Correctly add passive income
         const passiveIncome = autoClickRate.times(delta);
         score = score.plus(passiveIncome);
-        playerData.score = score.toFixed(9); // Keep local model in sync
+        playerData.score = score.toFixed(9);
         updateUI();
     }
-
     animateCanvas();
     requestAnimationFrame(gameLoop);
 }
@@ -189,17 +225,31 @@ async function init() {
     tg.ready();
     tg.expand();
     try {
-        // Fetch data first
         playerData = await apiRequest(`/player/${userId}`);
 
-        // Then build UI
+        // NEW: You can now access the profile data!
+        console.log("Player's username:", playerData.username);
+        console.log("Player's profile picture URL:", playerData.profile_photo_url);
+
+        // EXAMPLE: Display a welcome message
+        // You could add a <div id="welcome-message"></div> to your HTML
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.textContent = `Welcome, ${playerData.first_name || playerData.username}!`;
+        }
+
         generateUpgradesHTML();
         updateUI();
+        setupEventListeners();
 
-        // Then setup the canvas
-        setupCanvas();
+        // BUG FIX: Ensure coinImage has a chance to load before setupCanvas is called
+        if (coinImage.complete) {
+            setupCanvas();
+        } else {
+            coinImage.onload = setupCanvas;
+        }
 
-        // ONLY THEN start the game loop
+        lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
 
         loadingOverlay.classList.remove('active');
@@ -209,35 +259,38 @@ async function init() {
     }
 }
 
-// --- Event Listeners ---
-for (const key in navButtons) {
-    if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
-}
-canvas.addEventListener('mousedown', (e) => {
-    if (!playerData) return;
-    score = score.plus(clickValue);
-    clicksThisSecond++;
-    tg.HapticFeedback.impactOccurred('light');
-    const rect = canvas.getBoundingClientRect();
-    scale = BUMP_AMOUNT;
-    if (!isDistortionActive) {
-        isDistortionActive = true;
-        distortion.amplitude = distortion.maxAmplitude;
-        distortion.centerX = rect.width / 2;
-        distortion.centerY = rect.height / 2;
+// --- Event Listeners Setup ---
+function setupEventListeners() {
+    for (const key in navButtons) {
+        if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
     }
-});
-setInterval(() => {
-    cpsElement.textContent = `${clicksThisSecond} CPS`;
-    clicksThisSecond = 0;
-}, 1000);
-setInterval(() => {
-    if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-}, SYNC_INTERVAL);
-
-window.addEventListener('resize', setupCanvas);
-// BUG FIX: Ensure canvas is re-setup after image loads if it wasn't ready initially
-coinImage.onload = setupCanvas;
+    document.querySelectorAll('.upgrade-tab-link').forEach(tab => {
+        tab.onclick = openUpgradeTab;
+    });
+    canvas.addEventListener('mousedown', (e) => {
+        if (!playerData) return;
+        score = score.plus(clickValue);
+        clicksThisSecond++;
+        tg.HapticFeedback.impactOccurred('light');
+        const rect = canvas.getBoundingClientRect();
+        scale = BUMP_AMOUNT;
+        if (!isDistortionActive) {
+            isDistortionActive = true;
+            distortion.amplitude = distortion.maxAmplitude;
+            distortion.centerX = rect.width / 2;
+            distortion.centerY = rect.height / 2;
+        }
+    });
+    setInterval(() => {
+        cpsElement.textContent = `${clicksThisSecond} CPS`;
+        clicksThisSecond = 0;
+    }, 1000);
+    setInterval(() => {
+        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+    }, SYNC_INTERVAL);
+    window.addEventListener('resize', setupCanvas);
+    coinImage.onload = setupCanvas;
+}
 
 // --- Start the game ---
-init();
+init(); 

@@ -1,4 +1,4 @@
-<!-- index.html - REVISED -->
+<!-- index.html - FINAL MERGED VERSION -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,6 +22,7 @@
 
     <div id="app">
         <div class="app-content">
+            <!-- CLICKER PAGE -->
             <section id="clicker" class="page active">
                 <div class="canvas-container">
                     <canvas id="circleCanvas"></canvas>
@@ -41,14 +42,23 @@
                         </div>
                     </div>
                 </div>
-                <div id="cps-display-container">
-                    <span id="cps-stat">0 CPS</span>
-                </div>
+                <div id="cps-display-container"><span id="cps-stat">0 CPS</span></div>
             </section>
+
+            <!-- UPGRADES PAGE with TABS -->
             <section id="upgrades" class="page">
                 <h1 class="page-title">⚙️ Upgrades</h1>
-                <div id="upgrades-container"></div>
+                <div class="upgrade-nav">
+                    <button class="upgrade-tab-link active" data-tab="clickUpgrades">Per Click</button>
+                    <button class="upgrade-tab-link" data-tab="autoUpgrades">Per Second</button>
+                    <button class="upgrade-tab-link" data-tab="offlineUpgrades">Offline</button>
+                </div>
+                <div id="clickUpgrades" class="upgrade-tab-content active"></div>
+                <div id="autoUpgrades" class="upgrade-tab-content"></div>
+                <div id="offlineUpgrades" class="upgrade-tab-content"></div>
             </section>
+
+            <!-- OTHER PAGES (Placeholders) -->
             <section id="tasks" class="page">
                 <h1 class="page-title">🎯 Tasks</h1>
             </section>
@@ -61,16 +71,25 @@
         </div>
 
         <nav class="bottom-nav">
-            <button id="nav-upgrades" class="nav-btn"><span class="nav-icon">⚡️</span><span
-                    class="nav-text">Upgrades</span></button>
-            <button id="nav-tasks" class="nav-btn"><span class="nav-icon">🎯</span><span
-                    class="nav-text">Tasks</span></button>
-            <button id="nav-clicker" class="nav-btn active"><span class="nav-icon">🖱️</span><span
-                    class="nav-text">Click</span></button>
-            <button id="nav-skins" class="nav-btn"><span class="nav-icon">🎨</span><span
-                    class="nav-text">Skins</span></button>
-            <button id="nav-transactions" class="nav-btn"><span class="nav-icon">💸</span><span
-                    class="nav-text">Wallet</span></button>
+            <button id="nav-upgrades" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M4,11V13H11L11,19.93L12.5,21.43L14,19.93L14,13H20V11H4M12.5,2.57L14,4.07L14,10H11L11,4.07L12.5,2.57Z" />
+                </svg><span class="nav-text">Upgrades</span></button>
+            <button id="nav-tasks" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M20.5,14.5L19,16L15,12L19,8L20.5,9.5L18,12L20.5,14.5M3,4H13A1,1 0 0,1 14,5V9A1,1 0 0,1 13,10H3A1,1 0 0,1 2,9V5A1,1 0 0,1 3,4M3,14H13A1,1 0 0,1 14,15V19A1,1 0 0,1 13,20H3A1,1 0 0,1 2,19V15A1,1 0 0,1 3,14Z" />
+                </svg><span class="nav-text">Tasks</span></button>
+            <button id="nav-clicker" class="nav-btn active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M12.63,2.18L4.25,10.56C3.9,10.9 3.9,11.45 4.25,11.79L12.63,20.18C12.98,20.53 13.53,20.53 13.88,20.18L22.26,11.79C22.61,11.45 22.61,10.9 22.26,10.56L13.88,2.18C13.53,1.83 12.98,1.83 12.63,2.18M11,6.27L18.73,14H3.27L11,6.27Z" />
+                </svg><span class="nav-text">Click</span></button>
+            <button id="nav-skins" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12,3L2,12L5,15L12,8L19,15L22,12L12,3M5,17L7,19H17L19,17V15L12,8L5,15V17Z" />
+                </svg><span class="nav-text">Skins</span></button>
+            <button id="nav-transactions" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path
+                        d="M17,17.5C17,16.04 15.46,14.89 13.82,14.65L12,14.28L10.18,14.65C8.54,14.89 7,16.04 7,17.5V20H17V17.5M12,6A4,4 0 0,1 16,10C16,12.21 12,15.5 12,15.5C12,15.5 8,12.21 8,10A4,4 0 0,1 12,6M3,4H21V2H3V4Z" />
+                </svg><span class="nav-text">Wallet</span></button>
         </nav>
     </div>
     <script src="app.js"></script>
