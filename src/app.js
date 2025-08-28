@@ -64,21 +64,40 @@ const upgrades = {
     }
 };
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'), click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'), click_tier_5: new Decimal('0.004194304'),
-    auto_tier_1: new Decimal('0.000000064'), auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'), auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
-    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
+    click_tier_1: new Decimal('0.000000064'), 
+    click_tier_2: new Decimal('0.000001024'), 
+    click_tier_3: new Decimal('0.000016384'), 
+    click_tier_4: new Decimal('0.000262144'), 
+    click_tier_5: new Decimal('0.004194304'),
+
+    auto_tier_1: new Decimal('0.000000064'), 
+    auto_tier_2: new Decimal('0.000001024'), 
+    auto_tier_3: new Decimal('0.000016384'), 
+    auto_tier_4: new Decimal('0.000262144'), 
+    auto_tier_5: new Decimal('0.004194304'),
+
+    offline_tier_1: new Decimal('0.000000064'), 
+    offline_tier_2: new Decimal('0.000001024'), 
+    offline_tier_3: new Decimal('0.000016384'), 
+    offline_tier_4: new Decimal('0.000262144'), 
+    offline_tier_5: new Decimal('0.004194304'),
 };
 
-// --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
-    const options = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body) options.body = JSON.stringify(body);
-    const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
-        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+    try {
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) options.body = JSON.stringify(body);
+        const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
     }
-    return response.json();
 }
 
 function showPage(pageId) {
@@ -224,15 +243,19 @@ function gameLoop() {
     lastFrameTime = now;
 
     if (playerData) {
+        // Calculate passive income based on auto_click_rate
         const passiveIncome = new Decimal(playerData.auto_click_rate).times(delta);
+
+        // Update the score
         const currentScore = new Decimal(playerData.score);
-        playerData.score = currentScore.plus(passiveIncome).toFixed(9); // Update the master data object
-        updateUI(); // Redraw everything based on the master data
+        playerData.score = currentScore.plus(passiveIncome).toFixed(9);
+
+        // Update the UI
+        updateUI();
     }
 
     animateCanvas();
 }
-
 // --- Initialization and Event Listeners ---
 async function init() {
     tg.ready();
