@@ -233,15 +233,14 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         players.forEach((player, index) => {
             const rank = index + 1;
             const item = document.createElement('div');
-            item.className = 'leaderboard-item'; // No rank class on the container anymore
+            item.className = 'leaderboard-item';
 
-            // --- NEW: Smart Profile Picture Handling ---
             let pfpElement;
             if (player.profile_photo_url) {
                 pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
             } else {
                 const initial = player.username ? player.username.charAt(0).toUpperCase() : '?';
-                const color = getColorForUser(player.username);
+                const color = getColorForUser(player.username || ''); // THE FIX IS HERE
                 pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
             }
 
@@ -257,9 +256,8 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
                     displayValue = `${new Decimal(player.score).toFixed(9)}`;
             }
 
-            // The rank now gets the color class directly
             item.innerHTML = `
-                <div class="rank rank-${rank}">${rank}</div> 
+                <div class="rank rank-${rank}">${rank}</div>
                 ${pfpElement}
                 <div class="user-details">
                     <div class="username">${player.username || 'Anonymous'}</div>
@@ -275,15 +273,7 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
 }
 
 
-const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
-function getColorForUser(username = '') {
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash % userColors.length);
-    return userColors[index];
-}
+
 
 
 // --- Main Game Loop ---

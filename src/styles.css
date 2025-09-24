@@ -543,3 +543,30 @@ body {
     /* Reduced min-width */
     text-align: right;
 }
+
+.tab-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.tab-link {
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.tab-link.active {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 10px var(--primary-accent-glow);
+}
+
