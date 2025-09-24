@@ -284,6 +284,78 @@ function getColorForUser(username = '') {
 }
 
 
+async function handleSendCoins() {
+    const sendBtn = document.getElementById('send-btn');
+    const statusEl = document.getElementById('transfer-status');
+    const receiverUsername = document.getElementById('receiverUsername').value;
+    const amount = document.getElementById('transferAmount').value;
+
+    if (!receiverUsername || !amount) {
+        statusEl.textContent = 'Please fill in both fields.';
+        statusEl.className = 'status-message error';
+        return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+    statusEl.textContent = '';
+
+    try {
+        const result = await apiRequest('/wallet/transfer', 'POST', {
+            senderId: userId,
+            receiverUsername: receiverUsername,
+            amount: amount
+        });
+
+        if (result.success) {
+            statusEl.textContent = 'Transfer successful!';
+            statusEl.className = 'status-message success';
+            // Refresh player data to show updated score
+            playerData = await apiRequest(`/player/${userId}`);
+            score = new Decimal(playerData.score);
+            updateUI();
+            fetchTransactionHistory(); // Refresh history
+        }
+    } catch (error) {
+        statusEl.textContent = `Error: ${error.message}`;
+        statusEl.className = 'status-message error';
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        // Clear form after a short delay
+        setTimeout(() => {
+            document.getElementById('receiverUsername').value = '';
+            document.getElementById('transferAmount').value = '';
+        }, 2000);
+    }
+}
+
+// Function to fetch and display transaction history
+async function fetchTransactionHistory() {
+    const historyList = document.getElementById('transaction-history-list');
+    historyList.innerHTML = '<p>Loading history...</p>';
+    try {
+        const history = await apiRequest(`/wallet/history/${userId}`);
+        if (!history || history.length === 0) {
+            historyList.innerHTML = '<p>No transactions yet.</p>';
+            return;
+        }
+
+        historyList.innerHTML = history.map(tx => `
+            <div class="transaction-item">
+                <div class="tx-details">
+                    <span class="tx-type">Sent to @${tx.receiver_username}</span>
+                    <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
+                </div>
+                <div class="tx-amount">-${new Decimal(tx.amount).toFixed(9)}</div>
+            </div>
+        `).join('');
+    } catch (error) {
+        historyList.innerHTML = '<p class="error">Could not load history.</p>';
+    }
+}
+
+
 
 // --- Main Game Loop ---
 function gameLoop() {
@@ -429,6 +501,14 @@ function setupEventListeners() {
         scale = BUMP_AMOUNT;
         coinImageEl.style.transform = `scale(${scale})`;
         updateUI(); // Update score immediately on click
+    });
+
+    document.getElementById('send-btn').addEventListener('click', handleSendCoins);
+
+    // Fetch history when the wallet page is shown
+    navButtons.transactions.addEventListener('click', () => {
+        showPage('transactions');
+        fetchTransactionHistory();
     });
 
     setInterval(() => {
