@@ -422,3 +422,86 @@ body {
     font-weight: 600;
     color: var(--text-primary);
 }
+
+.leaderboard-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.leaderboard-tab-link {
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.leaderboard-tab-link.active {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 10px var(--primary-accent-glow);
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+}
+
+.leaderboard-item .rank {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    width: 2rem;
+    text-align: center;
+}
+
+.leaderboard-item .pfp {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.leaderboard-item .user-details {
+    flex-grow: 1;
+}
+
+.leaderboard-item .username {
+    font-weight: 600;
+}
+
+.leaderboard-item .score-value {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Gold, Silver, Copper styling */
+.leaderboard-item.rank-1 .rank {
+    color: #ffd700;
+}
+
+.leaderboard-item.rank-2 .rank {
+    color: #c0c0c0;
+}
+
+.leaderboard-item.rank-3 .rank {
+    color: #cd7f32;
+}

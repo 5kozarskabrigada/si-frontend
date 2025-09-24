@@ -17,6 +17,7 @@ const pages = {
     clicker: document.getElementById('clicker'),
     upgrades: document.getElementById('upgrades'),
     tasks: document.getElementById('tasks'),
+    leaderboard: document.getElementById('leaderboard'), 
     skins: document.getElementById('skins'),
     transactions: document.getElementById('transactions'),
 };
@@ -24,6 +25,7 @@ const navButtons = {
     clicker: document.getElementById('nav-clicker'),
     upgrades: document.getElementById('nav-upgrades'),
     tasks: document.getElementById('nav-tasks'),
+    leaderboard: document.getElementById('nav-leaderboard'),
     skins: document.getElementById('nav-skins'),
     transactions: document.getElementById('nav-transactions'),
 };
@@ -215,6 +217,54 @@ async function purchaseUpgrade(upgradeId) {
     }
 }
 
+async function fetchAndDisplayLeaderboard(sortBy = 'score') {
+    const listContainer = document.getElementById('leaderboard-list');
+    listContainer.innerHTML = '<div class="loading-spinner"></div>'; // Show a spinner while loading
+
+    try {
+        const players = await apiRequest(`/leaderboard/${sortBy}`);
+        listContainer.innerHTML = ''; // Clear spinner
+
+        if (players.length === 0) {
+            listContainer.innerHTML = '<p>The leaderboard is empty!</p>';
+            return;
+        }
+
+        players.forEach((player, index) => {
+            const rank = index + 1;
+            const item = document.createElement('div');
+            item.className = `leaderboard-item rank-${rank}`;
+
+            let displayValue;
+            switch (sortBy) {
+                case 'click_value':
+                    displayValue = `${new Decimal(player.click_value).toFixed(9)} / click`;
+                    break;
+                case 'auto_click_rate':
+                    displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)} / sec`;
+                    break;
+                default:
+                    displayValue = `${new Decimal(player.score).toFixed(9)} coins`;
+            }
+
+            item.innerHTML = `
+                <div class="rank">${rank}</div>
+                <img src="${player.profile_photo_url || '/assets/skin1.png'}" class="pfp" alt="pfp">
+                <div class="user-details">
+                    <div class="username">${player.username || 'Anonymous'}</div>
+                    <div class="score-value">${displayValue}</div>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+    } catch (error) {
+        listContainer.innerHTML = `<p>Error loading leaderboard. Please try again later.</p>`;
+        console.error('Failed to load leaderboard:', error);
+    }
+}
+
+
+
 // --- Main Game Loop ---
 function gameLoop() {
     requestAnimationFrame(gameLoop);
@@ -318,6 +368,21 @@ function setupEventListeners() {
         scale = BUMP_AMOUNT;
         coinImageEl.style.transform = `scale(${scale})`;
         updateUI(); // Update score immediately on click
+    });
+
+    document.querySelectorAll('.leaderboard-tab-link').forEach(tab => {
+        tab.onclick = (event) => {
+            document.querySelectorAll('.leaderboard-tab-link').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            fetchAndDisplayLeaderboard(event.currentTarget.dataset.sort);
+        };
+    });
+
+    // Automatically load the leaderboard when the page is shown
+    navButtons.leaderboard.addEventListener('click', () => {
+        showPage('leaderboard');
+        // Reset to the default tab and fetch data
+        document.querySelector('.leaderboard-tab-link[data-sort="score"]').click();
     });
 
     setInterval(() => {

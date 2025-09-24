@@ -60,6 +60,18 @@
                 <div id="offlineUpgrades" class="upgrade-tab-content"></div>
             </section>
 
+            <section id="leaderboard" class="page">
+                <h1 class="page-title"><span class="title-icon">🏆</span>Leaderboard</h1>
+                <div class="leaderboard-nav">
+                    <button class="leaderboard-tab-link active" data-sort="score">Total Coins</button>
+                    <button class="leaderboard-tab-link" data-sort="click_value">Per Click</button>
+                    <button class="leaderboard-tab-link" data-sort="auto_click_rate">Per Second</button>
+                </div>
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <!-- Player data will be injected here -->
+                </div>
+            </section>
+
             <!-- OTHER PAGES (Placeholders) -->
             <section id="tasks" class="page">
                 <h1 class="page-title"><span class="title-icon">🎯</span>Tasks</h1>
@@ -88,7 +100,10 @@
             <button id="nav-skins" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M12,3L2,12L5,15L12,8L19,15L22,12L12,3M5,17L7,19H17L19,17V15L12,8L5,15V17Z" />
                 </svg><span class="nav-text">Skins</span></button>
-            <button id="nav-transactions" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <button id="nav-leaderboard" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M16 11V3H8V11H2V21H22V11H16M14 5H10V9H14V5M4 13H8V19H4V13M20 19H16V13H20V19Z" />
+                </svg><span class="nav-text">Top</span></button>
+                <button id="nav-transactions" class="nav-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                         d="M17,17.5C17,16.04 15.46,14.89 13.82,14.65L12,14.28L10.18,14.65C8.54,14.89 7,16.04 7,17.5V20H17V17.5M12,6A4,4 0 0,1 16,10C16,12.21 12,15.5 12,15.5C12,15.5 8,12.21 8,10A4,4 0 0,1 12,6M3,4H21V2H3V4Z" />
                 </svg><span class="nav-text">Wallet</span></button>
