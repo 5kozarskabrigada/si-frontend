@@ -216,7 +216,7 @@ body {
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
     z-index: 100;
@@ -422,39 +422,6 @@ body {
     font-weight: 600;
     color: var(--text-primary);
 }
-
-.leaderboard-nav {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.leaderboard-tab-link {
-    padding: 0.625rem 1.25rem;
-    border: 1px solid var(--border-color);
-    background: var(--bg-surface-solid);
-    color: var(--text-secondary);
-    border-radius: var(--border-radius);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-}
-
-.leaderboard-tab-link.active {
-    background: var(--primary-accent);
-    color: white;
-    border-color: var(--primary-accent);
-    box-shadow: 0 0 10px var(--primary-accent-glow);
-}
-
-.leaderboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
 .leaderboard-item {
     display: flex;
     align-items: center;
@@ -462,7 +429,8 @@ body {
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.25rem;
+    /* Adjusted padding */
 }
 
 .leaderboard-item .rank {
@@ -471,6 +439,8 @@ body {
     color: var(--text-secondary);
     width: 2rem;
     text-align: center;
+    flex-shrink: 0;
+    /* Prevents rank from shrinking */
 }
 
 .leaderboard-item .pfp {
@@ -478,30 +448,69 @@ body {
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
+    /* Prevents pfp from shrinking */
 }
 
 .leaderboard-item .user-details {
     flex-grow: 1;
+    /* This is the magic: it takes up all available space */
+    overflow: hidden;
+    /* Prevents long names from breaking layout */
 }
 
 .leaderboard-item .username {
     font-weight: 600;
+    white-space: nowrap;
+    /* Prevents wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Adds '...' if username is too long */
 }
 
 .leaderboard-item .score-value {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    flex-shrink: 0;
+    /* Prevents score from shrinking */
+    min-width: 100px;
+    /* Give it some space */
+    text-align: right;
 }
 
-/* Gold, Silver, Copper styling */
+/* Optional: Make the total coins value stand out more */
+.leaderboard-item .score-value.total-coins {
+    color: var(--light-purple);
+    font-weight: 700;
+}
+
+
+/* Gold, Silver, Copper styling (no change needed here) */
 .leaderboard-item.rank-1 .rank {
     color: #ffd700;
 }
 
+.leaderboard-item.rank-1 {
+    border-color: #ffd700;
+}
+
+/* Added border highlight */
 .leaderboard-item.rank-2 .rank {
     color: #c0c0c0;
 }
 
+.leaderboard-item.rank-2 {
+    border-color: #c0c0c0;
+}
+
+/* Added border highlight */
 .leaderboard-item.rank-3 .rank {
     color: #cd7f32;
 }
+
+.leaderboard-item.rank-3 {
+    border-color: #cd7f32;
+}
+
+/* Added border highlight */

@@ -219,14 +219,14 @@ async function purchaseUpgrade(upgradeId) {
 
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     const listContainer = document.getElementById('leaderboard-list');
-    listContainer.innerHTML = '<div class="loading-spinner"></div>'; // Show a spinner while loading
+    listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>'; // Show a centered spinner
 
     try {
         const players = await apiRequest(`/leaderboard/${sortBy}`);
         listContainer.innerHTML = ''; // Clear spinner
 
         if (players.length === 0) {
-            listContainer.innerHTML = '<p>The leaderboard is empty!</p>';
+            listContainer.innerHTML = '<p style="text-align: center;">The leaderboard is empty!</p>';
             return;
         }
 
@@ -236,32 +236,35 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
             item.className = `leaderboard-item rank-${rank}`;
 
             let displayValue;
+            let valueClass = 'score-value'; // A base class for styling
             switch (sortBy) {
                 case 'click_value':
-                    displayValue = `${new Decimal(player.click_value).toFixed(9)} / click`;
+                    displayValue = `${new Decimal(player.click_value).toFixed(9)}`;
                     break;
                 case 'auto_click_rate':
-                    displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)} / sec`;
+                    displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)}`;
                     break;
                 default:
-                    displayValue = `${new Decimal(player.score).toFixed(9)} coins`;
+                    valueClass = 'score-value total-coins'; // Add class for specific styling
+                    displayValue = `${new Decimal(player.score).toFixed(9)}`;
             }
 
+            // --- MODIFIED HTML STRUCTURE ---
             item.innerHTML = `
                 <div class="rank">${rank}</div>
                 <img src="${player.profile_photo_url || '/assets/skin1.png'}" class="pfp" alt="pfp">
                 <div class="user-details">
                     <div class="username">${player.username || 'Anonymous'}</div>
-                    <div class="score-value">${displayValue}</div>
                 </div>
+                <div class="${valueClass}">${displayValue}</div>
             `;
             listContainer.appendChild(item);
         });
     } catch (error) {
-        listContainer.innerHTML = `<p>Error loading leaderboard. Please try again later.</p>`;
+        listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard. Please try again later.</p>`;
         console.error('Failed to load leaderboard:', error);
     }
-}
+} 
 
 
 
