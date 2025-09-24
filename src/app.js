@@ -364,13 +364,54 @@ async function init() {
 
 
 function setupEventListeners() {
+    // This part is for the main bottom navigation, it's already correct.
     for (const key in navButtons) {
-        if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
+        if (navButtons[key] && key !== 'leaderboard') { // Exclude leaderboard to handle it specially
+            navButtons[key].onclick = () => showPage(key);
+        }
     }
-    document.querySelectorAll('.upgrade-tab-link').forEach(tab => {
-        tab.onclick = openUpgradeTab;
+
+    // --- THE FIX IS HERE ---
+    // We now use a single selector for all tab links
+    document.querySelectorAll('.tab-link').forEach(tab => {
+        tab.onclick = (event) => {
+            const currentNav = event.currentTarget.parentElement;
+            // Remove 'active' from sibling tabs within the same navigation group
+            currentNav.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+            // Add 'active' to the clicked tab
+            event.currentTarget.classList.add('active');
+
+            // Check which page we're on to decide what action to take
+            if (currentNav.parentElement.id === 'upgrades') {
+                openUpgradeTab(event.currentTarget.dataset.tab);
+            } else if (currentNav.parentElement.id === 'leaderboard') {
+                fetchAndDisplayLeaderboard(event.currentTarget.dataset.sort);
+            }
+        };
     });
 
+    // We also need to simplify the 'openUpgradeTab' function since the active class is handled above.
+    function openUpgradeTab(tabName) {
+        const upgradesPage = document.getElementById('upgrades');
+        upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+    }
+
+    // Special handler for the main leaderboard nav button to trigger the initial fetch
+    navButtons.leaderboard.addEventListener('click', () => {
+        showPage('leaderboard');
+        // Find the "Total Coins" tab using the NEW class and simulate a click to load data
+        const defaultTab = document.querySelector('#leaderboard .tab-link[data-sort="score"]');
+        if (defaultTab && !defaultTab.classList.contains('active')) {
+            defaultTab.click();
+        } else if (!document.querySelector('.leaderboard-item')) {
+            // If the tab is already active but the list is empty, re-fetch
+            fetchAndDisplayLeaderboard('score');
+        }
+    });
+
+
+    // The rest of your event listeners
     coinImageEl.addEventListener('mousedown', () => {
         if (!playerData) return;
         score = score.plus(clickValue); // Use local clickValue
@@ -379,21 +420,6 @@ function setupEventListeners() {
         scale = BUMP_AMOUNT;
         coinImageEl.style.transform = `scale(${scale})`;
         updateUI(); // Update score immediately on click
-    });
-
-    document.querySelectorAll('.leaderboard-tab-link').forEach(tab => {
-        tab.onclick = (event) => {
-            document.querySelectorAll('.leaderboard-tab-link').forEach(t => t.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            fetchAndDisplayLeaderboard(event.currentTarget.dataset.sort);
-        };
-    });
-
-    // Automatically load the leaderboard when the page is shown
-    navButtons.leaderboard.addEventListener('click', () => {
-        showPage('leaderboard');
-        // Reset to the default tab and fetch data
-        document.querySelector('.leaderboard-tab-link[data-sort="score"]').click();
     });
 
     setInterval(() => {
