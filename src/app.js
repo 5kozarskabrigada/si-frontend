@@ -219,11 +219,11 @@ async function purchaseUpgrade(upgradeId) {
 
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     const listContainer = document.getElementById('leaderboard-list');
-    listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>'; // Show a centered spinner
+    listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
 
     try {
         const players = await apiRequest(`/leaderboard/${sortBy}`);
-        listContainer.innerHTML = ''; // Clear spinner
+        listContainer.innerHTML = '';
 
         if (players.length === 0) {
             listContainer.innerHTML = '<p style="text-align: center;">The leaderboard is empty!</p>';
@@ -233,10 +233,19 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         players.forEach((player, index) => {
             const rank = index + 1;
             const item = document.createElement('div');
-            item.className = `leaderboard-item rank-${rank}`;
+            item.className = 'leaderboard-item'; // No rank class on the container anymore
+
+            // --- NEW: Smart Profile Picture Handling ---
+            let pfpElement;
+            if (player.profile_photo_url) {
+                pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
+            } else {
+                const initial = player.username ? player.username.charAt(0).toUpperCase() : '?';
+                const color = getColorForUser(player.username);
+                pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
+            }
 
             let displayValue;
-            let valueClass = 'score-value'; // A base class for styling
             switch (sortBy) {
                 case 'click_value':
                     displayValue = `${new Decimal(player.click_value).toFixed(9)}`;
@@ -245,27 +254,36 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
                     displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)}`;
                     break;
                 default:
-                    valueClass = 'score-value total-coins'; // Add class for specific styling
                     displayValue = `${new Decimal(player.score).toFixed(9)}`;
             }
 
-            // --- MODIFIED HTML STRUCTURE ---
+            // The rank now gets the color class directly
             item.innerHTML = `
-                <div class="rank">${rank}</div>
-                <img src="${player.profile_photo_url || '/assets/skin1.png'}" class="pfp" alt="pfp">
+                <div class="rank rank-${rank}">${rank}</div> 
+                ${pfpElement}
                 <div class="user-details">
                     <div class="username">${player.username || 'Anonymous'}</div>
                 </div>
-                <div class="${valueClass}">${displayValue}</div>
+                <div class="score-value">${displayValue}</div>
             `;
             listContainer.appendChild(item);
         });
     } catch (error) {
-        listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard. Please try again later.</p>`;
+        listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard.</p>`;
         console.error('Failed to load leaderboard:', error);
     }
-} 
+}
 
+
+const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
+function getColorForUser(username = '') {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % userColors.length);
+    return userColors[index];
+}
 
 
 // --- Main Game Loop ---
