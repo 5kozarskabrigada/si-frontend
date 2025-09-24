@@ -273,6 +273,15 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
 }
 
 
+const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
+function getColorForUser(username = '') {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % userColors.length);
+    return userColors[index];
+}
 
 
 
