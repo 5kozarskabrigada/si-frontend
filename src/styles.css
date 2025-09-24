@@ -705,3 +705,11 @@ body {
     font-weight: 600;
     color: #e74c3c;
 }
+
+.tx-amount.received {
+    color: #2ecc71;
+}
+
+.tx-amount.sent {
+    color: #e74c3c;
+}

@@ -330,7 +330,6 @@ async function handleSendCoins() {
     }
 }
 
-// Function to fetch and display transaction history
 async function fetchTransactionHistory() {
     const historyList = document.getElementById('transaction-history-list');
     historyList.innerHTML = '<p>Loading history...</p>';
@@ -341,15 +340,26 @@ async function fetchTransactionHistory() {
             return;
         }
 
-        historyList.innerHTML = history.map(tx => `
-            <div class="transaction-item">
-                <div class="tx-details">
-                    <span class="tx-type">Sent to @${tx.receiver_username}</span>
-                    <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
+        // Use the new 'type' field from the backend to display a clearer history
+        historyList.innerHTML = history.map(tx => {
+            const isSent = tx.type === 'sent';
+            const txDetails = isSent
+                ? `Sent to @${tx.receiver_username}`
+                : `Received from User ID ${tx.sender_id}`; // Note: We don't have sender's username, so we use ID
+
+            const amountClass = isSent ? 'tx-amount sent' : 'tx-amount received';
+            const amountSign = isSent ? '-' : '+';
+
+            return `
+                <div class="transaction-item">
+                    <div class="tx-details">
+                        <span class="tx-type">${txDetails}</span>
+                        <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
+                    </div>
+                    <div class="${amountClass}">${amountSign}${new Decimal(tx.amount).toFixed(9)}</div>
                 </div>
-                <div class="tx-amount">-${new Decimal(tx.amount).toFixed(9)}</div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         historyList.innerHTML = '<p class="error">Could not load history.</p>';
     }
