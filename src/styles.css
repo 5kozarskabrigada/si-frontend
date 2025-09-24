@@ -464,12 +464,12 @@ body {
 .leaderboard-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     /* Reduced gap */
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.6rem;
     /* Reduced padding */
 }
 
@@ -499,9 +499,9 @@ body {
 
 .leaderboard-item .pfp,
 .leaderboard-item .pfp-placeholder {
-    width: 32px;
+    width: 28px;
     /* Smaller PFP */
-    height: 32px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
