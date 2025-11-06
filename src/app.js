@@ -383,10 +383,7 @@ function gameLoop() {
         updateUI(); // This is crucial for real-time score display
     }
 
-    if (scale > 1) {
-        scale = Math.max(1, scale - BUMP_RECOVERY);
-        coinImageEl.style.transform = `scale(${scale})`;
-    }
+
 }
 // --- Initialization and Event Listeners ---
 function getTWAUser() {
@@ -508,10 +505,30 @@ function setupEventListeners() {
         score = score.plus(clickValue); // Use local clickValue
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
-        scale = BUMP_AMOUNT;
-        coinImageEl.style.transform = `scale(${scale})`;
+
+        coinImageEl.classList.remove('bounce');
+        void coinImageEl.offsetWidth; // Trigger reflow
+        coinImageEl.classList.add('bounce');
+
         updateUI(); // Update score immediately on click
     });
+
+
+    coinImageEl.addEventListener('touchstart', (event) => {
+        if (!playerData) return;
+        event.preventDefault();
+
+        score = score.plus(clickValue);
+        clicksThisSecond++;
+        tg.HapticFeedback.impactOccurred('light');
+
+        coinImageEl.classList.remove('bounce');
+        void coinImageEl.offsetWidth;
+        coinImageEl.classList.add('bounce');
+
+        updateUI();
+    }, { passive: false });
+    
 
     document.getElementById('send-btn').addEventListener('click', handleSendCoins);
 
