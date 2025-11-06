@@ -91,27 +91,16 @@ const baseCosts = {
 // --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
-        const options = {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(10000) // 10 second timeout
-        };
+        const options = { method, headers: { 'Content-Type': 'application/json' } };
         if (body) options.body = JSON.stringify(body);
-
         const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
-
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
+            throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
         }
-
         return await response.json();
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
-        // Don't throw for sync requests to prevent game breaking
-        if (endpoint.includes('/sync')) {
-            return null; // Silent fail for sync
-        }
         throw error;
     }
 }
