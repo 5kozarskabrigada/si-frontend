@@ -38,13 +38,21 @@ body {
     flex-direction: column;
     position: relative;
 }
-
 .app-content {
     flex-grow: 1;
     position: relative;
     display: flex;
     overflow: hidden;
+    padding-bottom: 5rem;
 }
+
+@media (max-width: 768px) {
+    .app-content {
+        padding-bottom: 4.5rem;
+    }
+}
+
+Key Ch
 
 .page {
     display: none;
@@ -61,10 +69,12 @@ body {
 }
 
 #clicker.page.active {
-    overflow: hidden;
-    padding: 0;
+    display: flex;
+    flex-direction: column;
     height: 100vh;
-    /* Full viewport height */
+    padding: 0;
+    overflow: hidden;
+    position: relative;
 }
 
 @keyframes fadeIn {
@@ -153,38 +163,107 @@ body {
 } */
 
 .stats-container {
-    position: absolute;
-    top: 2%;
-    /* Closer to top on mobile */
-    left: 50%;
-    transform: translateX(-50%);
+    flex-shrink: 0;
     width: 95%;
-    /* Slightly wider on mobile */
     max-width: 400px;
+    margin: 1rem auto;
     background: rgba(15, 13, 23, 0.85);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     padding: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     z-index: 10;
     pointer-events: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .stats-container {
-        top: 1%;
+        margin: 0.5rem auto;
         padding: 0.75rem;
+        width: 92%;
     }
 
     .total-coins {
         font-size: 1.8rem;
-        /* Slightly smaller on mobile */
     }
 
     .stat-value {
-        font-size: 1rem;
+        font-size: 0.95rem;
+    }
+
+    #clicker-container {
+        min-height: 250px;
+    }
+
+    #coinImage {
+        max-width: 85%;
+        max-height: 85%;
+    }
+
+    #cps-display-container {
+        margin: 0.75rem auto;
+        padding: 0.4rem 1.25rem;
+    }
+}
+
+@media (max-width: 480px) and (max-height: 700px) {
+    .stats-container {
+        margin: 0.25rem auto;
+        padding: 0.5rem;
+    }
+
+    .total-coins {
+        font-size: 1.6rem;
+    }
+
+    .stats-grid {
+        gap: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+    }
+
+    .stat-value {
+        font-size: 0.85rem;
+    }
+
+    #clicker-container {
+        min-height: 200px;
+    }
+}
+
+/* Tall screen adjustments */
+@media (min-height: 800px) {
+    .stats-container {
+        margin: 1.5rem auto;
+    }
+
+    #clicker-container {
+        min-height: 400px;
+    }
+
+    #cps-display-container {
+        margin: 1rem auto;
+    }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) {
+    .stats-container {
+        margin: 1.5rem auto;
+        padding: 1.25rem;
+    }
+
+    #clicker-container {
+        min-height: 350px;
+    }
+
+    #cps-display-container {
+        margin: 1rem auto;
+        padding: 0.6rem 1.75rem;
     }
 }
 
@@ -224,11 +303,10 @@ body {
 }
 
 #cps-display-container {
-    position: absolute;
-    bottom: calc(5rem + 1rem);  
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15, 13, 23, 0.8);
+    flex-shrink: 0;
+    width: fit-content;
+    margin: 0.5rem auto;
+    background: rgba(15, 13, 23, 0.9);
     backdrop-filter: blur(10px);
     padding: 0.5rem 1.5rem;
     border-radius: 2rem;
@@ -269,7 +347,7 @@ body {
 
 
 .bottom-nav {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
@@ -462,19 +540,13 @@ nav-btn.active svg {
 } */
 
 #clicker-container {
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: 70vh;
-    /* Use viewport height for consistency */
-    min-height: 400px;
-    /* Minimum height for very small screens */
-    max-height: calc(100vh - 200px);
-    /* Prevent overlapping with stats and nav */
-    position: absolute;
-    top: 0;
-    left: 0;
+    min-height: 300px;
+    position: relative;
     overflow: hidden;
 }
 
@@ -504,8 +576,8 @@ nav-btn.active svg {
 }
 
 #coinImage {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 80%;
+    max-height: 80%;
     width: auto;
     height: auto;
     object-fit: contain;
@@ -513,8 +585,6 @@ nav-btn.active svg {
     user-select: none;
     z-index: 5;
     will-change: transform;
-    /* Add a subtle transition for any state changes */
-    transition: filter 0.2s ease;
 }
 
 #coinImage.bounce {
