@@ -889,7 +889,7 @@ function setupEventListeners() {
 
     // Don't forget to call setupTransactionSearch
     setupTransactionSearch();
-    
+
 
     document.getElementById('send-btn').addEventListener('click', handleSendCoins);
 
@@ -909,6 +909,9 @@ function setupEventListeners() {
         if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
     }, SYNC_INTERVAL);
 }
+
+
+
 
 // --- Start the game ---
 init();
