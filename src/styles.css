@@ -260,6 +260,144 @@ body {
     z-index: 100;
 } */
 
+/* Tasks & Achievements Styles */
+.tasks-tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tasks-tab-content.active {
+    display: flex;
+}
+
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.tasks-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.refresh-info {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.task-item,
+.achievement-item {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-info {
+    flex-grow: 1;
+}
+
+.task-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.task-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.task-progress {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.task-reward {
+    font-weight: 600;
+    color: var(--primary-accent);
+    margin-top: 0.5rem;
+}
+
+.task-action {
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.claim-btn {
+    padding: 0.5rem 1rem;
+    background: var(--primary-accent);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.claim-btn:disabled {
+    background: #333;
+    color: #777;
+    cursor: not-allowed;
+}
+
+.claim-btn:not(:disabled):hover {
+    background: var(--light-purple);
+    transform: translateY(-1px);
+}
+
+.task-completed {
+    border-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.achievement-completed {
+    border-color: #f39c12;
+    background: rgba(243, 156, 18, 0.05);
+}
+
+.completed-badge {
+    color: #2ecc71;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.search-container {
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 2px var(--primary-accent-glow);
+}
+
+.transaction-item.hidden {
+    display: none;
+}
 
 .bottom-nav {
     position: absolute;

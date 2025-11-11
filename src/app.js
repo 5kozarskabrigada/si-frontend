@@ -88,6 +88,314 @@ const baseCosts = {
     offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
 };
 
+
+
+// Task System
+const tasksSystem = {
+    dailyTasks: [],
+    achievements: [],
+    lastDailyRefresh: null,
+
+    // Daily task templates
+    dailyTaskTemplates: [
+        { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
+        { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
+        { type: 'upgrades', target: 3, title: 'Upgrade Enthusiast', description: 'Purchase {target} upgrades', reward: '0.000000075' },
+        { type: 'login', target: 1, title: 'Daily Login', description: 'Log in today', reward: '0.000000025' },
+        { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' }
+    ],
+
+    // Permanent achievements
+    permanentAchievements: [
+        { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
+        { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
+        { id: 'click_1000', type: 'clicks', target: 1000, title: 'Click Master', description: 'Reach 1,000 total clicks', reward: '0.000000200', completed: false },
+        { id: 'first_upgrade', type: 'upgrades', target: 1, title: 'First Upgrade', description: 'Purchase your first upgrade', reward: '0.000000030', completed: false },
+        { id: 'upgrade_10', type: 'upgrades', target: 10, title: 'Upgrade Collector', description: 'Purchase 10 upgrades', reward: '0.000000150', completed: false },
+        { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
+        { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false }
+    ]
+};
+
+// Initialize tasks system
+async function initTasksSystem() {
+    await loadTasksProgress();
+    generateDailyTasks();
+    renderTasksUI();
+    startDailyTimer();
+}
+
+// Generate random daily tasks
+function generateDailyTasks() {
+    const today = new Date().toDateString();
+    const lastRefresh = localStorage.getItem('lastDailyRefresh');
+
+    // Only generate new tasks if it's a new day or first time
+    if (lastRefresh !== today) {
+        const shuffled = [...tasksSystem.dailyTaskTemplates].sort(() => 0.5 - Math.random());
+        tasksSystem.dailyTasks = shuffled.slice(0, 5).map((task, index) => ({
+            ...task,
+            id: `daily_${index}`,
+            progress: 0,
+            completed: false,
+            claimed: false
+        }));
+
+        localStorage.setItem('lastDailyRefresh', today);
+        localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
+    } else {
+        // Load existing tasks
+        const savedTasks = localStorage.getItem('dailyTasks');
+        if (savedTasks) {
+            tasksSystem.dailyTasks = JSON.parse(savedTasks);
+        }
+    }
+}
+
+// Load achievements progress
+async function loadTasksProgress() {
+    const savedAchievements = localStorage.getItem('achievementsProgress');
+    if (savedAchievements) {
+        tasksSystem.achievements = JSON.parse(savedAchievements);
+    } else {
+        tasksSystem.achievements = tasksSystem.permanentAchievements.map(ach => ({
+            ...ach,
+            progress: 0,
+            completed: false,
+            claimed: false
+        }));
+    }
+
+    // Load lifetime stats
+    const stats = JSON.parse(localStorage.getItem('lifetimeStats') || '{}');
+    tasksSystem.lifetimeStats = {
+        totalClicks: stats.totalClicks || 0,
+        totalUpgrades: stats.totalUpgrades || 0,
+        totalScore: stats.totalScore || '0',
+        dailyTasksCompleted: stats.dailyTasksCompleted || 0
+    };
+}
+
+// Update task progress
+function updateTaskProgress(type, amount = 1) {
+    // Update daily tasks
+    tasksSystem.dailyTasks.forEach(task => {
+        if (!task.completed && task.type === type) {
+            if (type === 'score') {
+                const currentScore = new Decimal(score);
+                const targetScore = new Decimal(task.target);
+                if (currentScore.greaterThanOrEqualTo(targetScore)) {
+                    task.progress = task.target;
+                    task.completed = true;
+                }
+            } else {
+                task.progress += amount;
+                if (task.progress >= task.target) {
+                    task.completed = true;
+                    task.progress = task.target;
+                }
+            }
+        }
+    });
+
+    // Update achievements
+    tasksSystem.achievements.forEach(achievement => {
+        if (!achievement.completed && achievement.type === type) {
+            if (type === 'score') {
+                const currentScore = new Decimal(score);
+                const targetScore = new Decimal(achievement.target);
+                if (currentScore.greaterThanOrEqualTo(targetScore)) {
+                    achievement.progress = achievement.target;
+                    achievement.completed = true;
+                }
+            } else {
+                achievement.progress += amount;
+                if (achievement.progress >= achievement.target) {
+                    achievement.completed = true;
+                    achievement.progress = achievement.target;
+                }
+            }
+        }
+    });
+
+    // Update lifetime stats
+    if (type === 'clicks') {
+        tasksSystem.lifetimeStats.totalClicks += amount;
+    } else if (type === 'upgrades') {
+        tasksSystem.lifetimeStats.totalUpgrades += amount;
+    }
+
+    saveTasksProgress();
+    renderTasksUI();
+}
+
+// Claim task reward
+async function claimTaskReward(taskId, isAchievement = false) {
+    const tasks = isAchievement ? tasksSystem.achievements : tasksSystem.dailyTasks;
+    const task = tasks.find(t => t.id === taskId);
+
+    if (!task || !task.completed || task.claimed) return;
+
+    try {
+        const reward = new Decimal(task.reward);
+        score = score.plus(reward);
+
+        // Update UI immediately
+        updateUI();
+
+        // Mark as claimed
+        task.claimed = true;
+
+        // For daily completion achievement
+        if (!isAchievement) {
+            tasksSystem.lifetimeStats.dailyTasksCompleted += 1;
+            updateTaskProgress('daily_complete', 1);
+        }
+
+        // Save progress
+        saveTasksProgress();
+        renderTasksUI();
+
+        tg.HapticFeedback.notificationOccurred('success');
+
+        // Show reward notification
+        showRewardNotification(`+${reward.toFixed(9)} coins!`);
+
+    } catch (error) {
+        console.error('Failed to claim reward:', error);
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+// Render tasks UI
+function renderTasksUI() {
+    renderDailyTasks();
+    renderAchievements();
+}
+
+function renderDailyTasks() {
+    const container = document.getElementById('daily-tasks-list');
+    if (!container) return;
+
+    if (tasksSystem.dailyTasks.length === 0) {
+        container.innerHTML = '<p>No daily tasks available.</p>';
+        return;
+    }
+
+    container.innerHTML = tasksSystem.dailyTasks.map(task => `
+        <div class="task-item ${task.completed ? 'task-completed' : ''}">
+            <div class="task-info">
+                <div class="task-title">${task.title}</div>
+                <div class="task-description">${task.description.replace('{target}', task.target)}</div>
+                <div class="task-progress">
+                    Progress: ${task.progress}/${task.target}
+                    ${task.completed ? '<span class="completed-badge"> ✓ Completed</span>' : ''}
+                </div>
+                <div class="task-reward">Reward: ${task.reward} coins</div>
+            </div>
+            <div class="task-action">
+                <button class="claim-btn" 
+                    onclick="claimTaskReward('${task.id}', false)"
+                    ${task.completed && !task.claimed ? '' : 'disabled'}>
+                    ${task.claimed ? 'Claimed' : 'Claim'}
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievements-list');
+    if (!container) return;
+
+    container.innerHTML = tasksSystem.achievements.map(achievement => `
+        <div class="achievement-item ${achievement.completed ? 'achievement-completed' : ''}">
+            <div class="task-info">
+                <div class="task-title">${achievement.title}</div>
+                <div class="task-description">${achievement.description}</div>
+                <div class="task-progress">
+                    Progress: ${achievement.progress}/${achievement.target}
+                    ${achievement.completed ? '<span class="completed-badge"> ✓ Completed</span>' : ''}
+                </div>
+                <div class="task-reward">Reward: ${achievement.reward} coins</div>
+            </div>
+            <div class="task-action">
+                <button class="claim-btn" 
+                    onclick="claimTaskReward('${achievement.id}', true)"
+                    ${achievement.completed && !achievement.claimed ? '' : 'disabled'}>
+                    ${achievement.claimed ? 'Claimed' : 'Claim'}
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Daily timer
+function startDailyTimer() {
+    function updateTimer() {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const diff = tomorrow - now;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        const timerElement = document.getElementById('refresh-timer');
+        if (timerElement) {
+            timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+}
+
+// Save progress
+function saveTasksProgress() {
+    localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
+    localStorage.setItem('achievementsProgress', JSON.stringify(tasksSystem.achievements));
+    localStorage.setItem('lifetimeStats', JSON.stringify(tasksSystem.lifetimeStats));
+}
+
+// Reward notification
+function showRewardNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--primary-accent);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 2000);
+}
+
+// Add to your existing CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translate(-50%, -40%); }
+        20% { opacity: 1; transform: translate(-50%, -50%); }
+        80% { opacity: 1; transform: translate(-50%, -50%); }
+        100% { opacity: 0; transform: translate(-50%, -60%); }
+    }
+`;
+document.head.appendChild(style);
+
 // --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
@@ -189,6 +497,8 @@ async function purchaseUpgrade(upgradeId) {
     const btn = document.getElementById(`${upgradeId}_btn`);
     const originalText = btn.innerHTML;
     btn.disabled = true;
+
+    updateTaskProgress('upgrades', 1);
 
     try {
         const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
@@ -330,9 +640,31 @@ async function handleSendCoins() {
     }
 }
 
+// Add search functionality
+function setupTransactionSearch() {
+    const searchInput = document.getElementById('transaction-search');
+    searchInput.addEventListener('input', filterTransactions);
+}
+
+function filterTransactions() {
+    const searchTerm = document.getElementById('transaction-search').value.toLowerCase();
+    const transactionItems = document.querySelectorAll('.transaction-item');
+
+    transactionItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+}
+
+// Update fetchTransactionHistory to include searchable data
 async function fetchTransactionHistory() {
     const historyList = document.getElementById('transaction-history-list');
     historyList.innerHTML = '<p>Loading history...</p>';
+
     try {
         const history = await apiRequest(`/wallet/history/${userId}`);
         if (!history || history.length === 0) {
@@ -340,30 +672,33 @@ async function fetchTransactionHistory() {
             return;
         }
 
-        // Use the new 'type' field from the backend to display a clearer history
         historyList.innerHTML = history.map(tx => {
             const isSent = tx.type === 'sent';
             const txDetails = isSent
                 ? `Sent to @${tx.receiver_username}`
-                : `Received from User ID ${tx.sender_id}`; // Note: We don't have sender's username, so we use ID
+                : `Received from User ID ${tx.sender_id}`;
 
             const amountClass = isSent ? 'tx-amount sent' : 'tx-amount received';
             const amountSign = isSent ? '-' : '+';
+            const amount = new Decimal(tx.amount).toFixed(9);
 
             return `
-                <div class="transaction-item">
+                <div class="transaction-item" data-amount="${amount}" data-type="${isSent ? 'sent' : 'received'}" data-date="${tx.created_at}">
                     <div class="tx-details">
                         <span class="tx-type">${txDetails}</span>
                         <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
                     </div>
-                    <div class="${amountClass}">${amountSign}${new Decimal(tx.amount).toFixed(9)}</div>
+                    <div class="${amountClass}">${amountSign}${amount}</div>
                 </div>
             `;
         }).join('');
+
     } catch (error) {
         historyList.innerHTML = '<p class="error">Could not load history.</p>';
     }
 }
+
+// Don't forget to call setupTransactionSearch in your init function
 
 
 
@@ -428,6 +763,10 @@ async function init() {
 
     // 1) sync Telegram profile to DB (username, names, photo, language)
     await syncProfile();
+    await initTasksSystem();
+
+    // Update score-based tasks
+    updateTaskProgress('score');
 
     try {
         // 2) now load/create the player row
@@ -439,6 +778,7 @@ async function init() {
         generateUpgradesHTML();
         setupEventListeners();
         updateUI();
+        setupTransactionSearch();
 
         lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
@@ -506,6 +846,9 @@ function setupEventListeners() {
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
 
+        updateTaskProgress('clicks', 1);
+        updateTaskProgress('clicks_5s', 0);
+
         coinImageEl.classList.remove('bounce');
         void coinImageEl.offsetWidth; // Trigger reflow
         coinImageEl.classList.add('bounce');
@@ -528,6 +871,24 @@ function setupEventListeners() {
 
         updateUI();
     }, { passive: false });
+
+
+    document.querySelectorAll('#tasks .tab-link').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabName = e.currentTarget.dataset.tab;
+            document.querySelectorAll('#tasks .tasks-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('#tasks .tab-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            e.currentTarget.classList.add('active');
+        });
+    });
+
+    // Don't forget to call setupTransactionSearch
+    setupTransactionSearch();
     
 
     document.getElementById('send-btn').addEventListener('click', handleSendCoins);

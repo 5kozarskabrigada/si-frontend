@@ -72,10 +72,35 @@
                 </div>
             </section>
 
-            <!-- OTHER PAGES (Placeholders) -->
+
             <section id="tasks" class="page">
-                <h1 class="page-title"><span class="title-icon">🎯</span>Tasks</h1>
+                <h1 class="page-title"><span class="title-icon">🎯</span>Tasks & Achievements</h1>
+
+                <div class="tab-nav">
+                    <button class="tab-link active" data-tab="daily-tasks">Daily Tasks</button>
+                    <button class="tab-link" data-tab="achievements">Achievements</button>
+                </div>
+
+                <!-- Daily Tasks Tab -->
+                <div id="daily-tasks" class="tasks-tab-content active">
+                    <div class="tasks-header">
+                        <h3>Today's Tasks</h3>
+                        <div class="refresh-info">Refreshes in <span id="refresh-timer">24:00:00</span></div>
+                    </div>
+                    <div id="daily-tasks-list" class="tasks-list">
+                        <!-- Daily tasks will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Achievements Tab -->
+                <div id="achievements" class="tasks-tab-content">
+                    <div id="achievements-list" class="tasks-list">
+                        <!-- Achievements will be injected here -->
+                    </div>
+                </div>
             </section>
+
+
             <section id="skins" class="page">
                 <h1 class="page-title"><span class="title-icon">🎨</span>Skins</h1>
             </section>
@@ -99,13 +124,15 @@
                 </div>
             
                 <!-- Transaction History -->
-                <div class="wallet-card">
-                    <h2>History</h2>
-                    <div id="transaction-history-list">
-                        <p>No transactions yet.</p>
-                    </div>
+            <div class="wallet-card">
+                <h2>History</h2>
+                <div class="search-container">
+                    <input type="text" id="transaction-search" placeholder="Search transactions..." class="search-input">
                 </div>
-            </section>
+                <div id="transaction-history-list">
+                    <p>No transactions yet.</p>
+                </div>
+            </div>
 
         </div>
 
