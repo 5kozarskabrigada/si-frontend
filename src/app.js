@@ -1,8 +1,6 @@
-// app.js - FINAL CANVAS-FREE AND COMPLETE VERSION
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
-// --- Configuration & Element Selection ---
-const BACKEND_URL = 'https://si-backend-2i9b.onrender.com'; // IMPORTANT: Set this to your Render backend URL!
+const BACKEND_URL = 'https://si-backend-2i9b.onrender.com';
 const tg = window.Telegram.WebApp;
 
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -17,7 +15,7 @@ const pages = {
     clicker: document.getElementById('clicker'),
     upgrades: document.getElementById('upgrades'),
     tasks: document.getElementById('tasks'),
-    leaderboard: document.getElementById('leaderboard'), 
+    leaderboard: document.getElementById('leaderboard'),
     skins: document.getElementById('skins'),
     transactions: document.getElementById('transactions'),
 };
@@ -40,12 +38,9 @@ const userInfo = {
     photo_url: tg.initDataUnsafe?.user?.photo_url
 };
 
+let userId = tg.initDataUnsafe?.user?.id ?? Date.now();
 
-// --- Game State & Constants ---
-let userId = tg.initDataUnsafe?.user?.id ?? Date.now(); // numeric fallback
-
-
-const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest'; // New
+const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest';
 let playerData = null;
 let score = new Decimal(0);
 let autoClickRate = new Decimal(0);
@@ -53,11 +48,9 @@ let clickValue = new Decimal(0);
 const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
 let lastFrameTime = Date.now();
-let scale = 1; // For the bump effect
-const BUMP_AMOUNT = 1.05;
-const BUMP_RECOVERY = 0.04;
 
-// --- COMPLETE Frontend Upgrade Definitions ---
+// REMOVED: Unused physics variables (scale, BUMP_AMOUNT, etc)
+
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
 const upgrades = {
     click: {
@@ -88,15 +81,11 @@ const baseCosts = {
     offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
 };
 
-
-
-// Task System
 const tasksSystem = {
     dailyTasks: [],
     achievements: [],
     lastDailyRefresh: null,
 
-    // Daily task templates
     dailyTaskTemplates: [
         { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
         { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
@@ -105,7 +94,6 @@ const tasksSystem = {
         { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' }
     ],
 
-    // Permanent achievements
     permanentAchievements: [
         { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
         { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
@@ -117,7 +105,6 @@ const tasksSystem = {
     ]
 };
 
-// Initialize tasks system
 async function initTasksSystem() {
     await loadTasksProgress();
     generateDailyTasks();
@@ -125,12 +112,10 @@ async function initTasksSystem() {
     startDailyTimer();
 }
 
-// Generate random daily tasks
 function generateDailyTasks() {
     const today = new Date().toDateString();
     const lastRefresh = localStorage.getItem('lastDailyRefresh');
 
-    // Only generate new tasks if it's a new day or first time
     if (lastRefresh !== today) {
         const shuffled = [...tasksSystem.dailyTaskTemplates].sort(() => 0.5 - Math.random());
         tasksSystem.dailyTasks = shuffled.slice(0, 5).map((task, index) => ({
@@ -144,7 +129,6 @@ function generateDailyTasks() {
         localStorage.setItem('lastDailyRefresh', today);
         localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
     } else {
-        // Load existing tasks
         const savedTasks = localStorage.getItem('dailyTasks');
         if (savedTasks) {
             tasksSystem.dailyTasks = JSON.parse(savedTasks);
@@ -152,7 +136,6 @@ function generateDailyTasks() {
     }
 }
 
-// Load achievements progress
 async function loadTasksProgress() {
     const savedAchievements = localStorage.getItem('achievementsProgress');
     if (savedAchievements) {
@@ -166,7 +149,6 @@ async function loadTasksProgress() {
         }));
     }
 
-    // Load lifetime stats
     const stats = JSON.parse(localStorage.getItem('lifetimeStats') || '{}');
     tasksSystem.lifetimeStats = {
         totalClicks: stats.totalClicks || 0,
@@ -176,9 +158,7 @@ async function loadTasksProgress() {
     };
 }
 
-// Update task progress
 function updateTaskProgress(type, amount = 1) {
-    // Update daily tasks
     tasksSystem.dailyTasks.forEach(task => {
         if (!task.completed && task.type === type) {
             if (type === 'score') {
@@ -198,7 +178,6 @@ function updateTaskProgress(type, amount = 1) {
         }
     });
 
-    // Update achievements
     tasksSystem.achievements.forEach(achievement => {
         if (!achievement.completed && achievement.type === type) {
             if (type === 'score') {
@@ -218,7 +197,6 @@ function updateTaskProgress(type, amount = 1) {
         }
     });
 
-    // Update lifetime stats
     if (type === 'clicks') {
         tasksSystem.lifetimeStats.totalClicks += amount;
     } else if (type === 'upgrades') {
@@ -229,7 +207,6 @@ function updateTaskProgress(type, amount = 1) {
     renderTasksUI();
 }
 
-// Claim task reward
 async function claimTaskReward(taskId, isAchievement = false) {
     const tasks = isAchievement ? tasksSystem.achievements : tasksSystem.dailyTasks;
     const task = tasks.find(t => t.id === taskId);
@@ -239,35 +216,24 @@ async function claimTaskReward(taskId, isAchievement = false) {
     try {
         const reward = new Decimal(task.reward);
         score = score.plus(reward);
-
-        // Update UI immediately
         updateUI();
-
-        // Mark as claimed
         task.claimed = true;
 
-        // For daily completion achievement
         if (!isAchievement) {
             tasksSystem.lifetimeStats.dailyTasksCompleted += 1;
             updateTaskProgress('daily_complete', 1);
         }
 
-        // Save progress
         saveTasksProgress();
         renderTasksUI();
-
         tg.HapticFeedback.notificationOccurred('success');
-
-        // Show reward notification
         showRewardNotification(`+${reward.toFixed(9)} coins!`);
-
     } catch (error) {
         console.error('Failed to claim reward:', error);
         tg.HapticFeedback.notificationOccurred('error');
     }
 }
 
-// Render tasks UI
 function renderTasksUI() {
     renderDailyTasks();
     renderAchievements();
@@ -330,7 +296,6 @@ function renderAchievements() {
     `).join('');
 }
 
-// Daily timer
 function startDailyTimer() {
     function updateTimer() {
         const now = new Date();
@@ -353,14 +318,12 @@ function startDailyTimer() {
     setInterval(updateTimer, 1000);
 }
 
-// Save progress
 function saveTasksProgress() {
     localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
     localStorage.setItem('achievementsProgress', JSON.stringify(tasksSystem.achievements));
     localStorage.setItem('lifetimeStats', JSON.stringify(tasksSystem.lifetimeStats));
 }
 
-// Reward notification
 function showRewardNotification(message) {
     const notification = document.createElement('div');
     notification.style.cssText = `
@@ -384,7 +347,6 @@ function showRewardNotification(message) {
     }, 2000);
 }
 
-// Add to your existing CSS
 const style = document.createElement('style');
 style.textContent = `
     @keyframes fadeInOut {
@@ -396,7 +358,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// --- Core Functions ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
         const options = { method, headers: { 'Content-Type': 'application/json' } };
@@ -423,18 +384,10 @@ function showPage(pageId) {
 
 function updateUI() {
     if (!playerData) return;
+    scoreElement.textContent = score.toFixed(9);
+    perClickElement.textContent = clickValue.toFixed(9);
+    perSecondElement.textContent = autoClickRate.toFixed(9);
 
-    // Update score from current game state (the Decimal object)
-    scoreElement.textContent = score.toFixed(9); // Display with fixed precision
-
-    // Update per click/per second values from player data
-    // These should reflect the current 'static' values, not a real-time count
-    perClickElement.textContent = clickValue.toFixed(9); // Use local Decimal
-    perSecondElement.textContent = autoClickRate.toFixed(9); // Use local Decimal
-
-
-
-    // Update upgrade buttons
     for (const type in upgrades) {
         for (const id in upgrades[type]) {
             const level = new Decimal(playerData[`${id}_level`] || 0);
@@ -449,7 +402,6 @@ function updateUI() {
     }
 }
 
-// --- Upgrade Logic ---
 function generateUpgradesHTML() {
     const containers = {
         click: document.getElementById('clickUpgrades'),
@@ -503,7 +455,7 @@ async function purchaseUpgrade(upgradeId) {
     try {
         const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
         playerData = player;
-        // Update local game state based on new player data
+
         score = new Decimal(playerData.score);
         clickValue = new Decimal(playerData.click_value);
         autoClickRate = new Decimal(playerData.auto_click_rate);
@@ -511,18 +463,14 @@ async function purchaseUpgrade(upgradeId) {
 
         tg.HapticFeedback.notificationOccurred('success');
         btn.innerHTML = 'Success!';
-    } 
-    
-    catch (error) {
+    } catch (error) {
         console.error('Upgrade failed:', error);
         tg.HapticFeedback.notificationOccurred('error');
         btn.innerHTML = 'Not Enough Coins';
-    } 
-    
-    finally {
+    } finally {
         setTimeout(() => {
             btn.innerHTML = originalText;
-            updateUI(); // Re-enable button if enough score, or keep disabled if not.
+            updateUI();
         }, 1000);
     }
 }
@@ -550,7 +498,7 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
                 pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
             } else {
                 const initial = player.username ? player.username.charAt(0).toUpperCase() : '?';
-                const color = getColorForUser(player.username || ''); // THE FIX IS HERE
+                const color = getColorForUser(player.username || '');
                 pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
             }
 
@@ -620,11 +568,11 @@ async function handleSendCoins() {
         if (result.success) {
             statusEl.textContent = 'Transfer successful!';
             statusEl.className = 'status-message success';
-            // Refresh player data to show updated score
+
             playerData = await apiRequest(`/player/${userId}`);
             score = new Decimal(playerData.score);
             updateUI();
-            fetchTransactionHistory(); // Refresh history
+            fetchTransactionHistory();
         }
     } catch (error) {
         statusEl.textContent = `Error: ${error.message}`;
@@ -632,7 +580,6 @@ async function handleSendCoins() {
     } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
-        // Clear form after a short delay
         setTimeout(() => {
             document.getElementById('receiverUsername').value = '';
             document.getElementById('transferAmount').value = '';
@@ -640,7 +587,6 @@ async function handleSendCoins() {
     }
 }
 
-// Add search functionality
 function setupTransactionSearch() {
     const searchInput = document.getElementById('transaction-search');
     searchInput.addEventListener('input', filterTransactions);
@@ -660,7 +606,6 @@ function filterTransactions() {
     });
 }
 
-// Update fetchTransactionHistory to include searchable data
 async function fetchTransactionHistory() {
     const historyList = document.getElementById('transaction-history-list');
     historyList.innerHTML = '<p>Loading history...</p>';
@@ -698,29 +643,20 @@ async function fetchTransactionHistory() {
     }
 }
 
-// Don't forget to call setupTransactionSearch in your init function
 
-
-
-// --- Main Game Loop ---
 function gameLoop() {
     requestAnimationFrame(gameLoop);
-
     const now = Date.now();
     const delta = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
     if (playerData) {
-        // Use the local autoClickRate (which is kept in sync with playerData)
         const passiveIncome = autoClickRate.times(delta);
         score = score.plus(passiveIncome);
-        // Do NOT update playerData.score here; it will be synced periodically
-        updateUI(); // This is crucial for real-time score display
+        updateUI();
     }
-
-
 }
-// --- Initialization and Event Listeners ---
+
 function getTWAUser() {
     const u = tg?.initDataUnsafe?.user;
     if (!u) return null;
@@ -730,13 +666,13 @@ function getTWAUser() {
         first_name: u.first_name ?? null,
         last_name: u.last_name ?? null,
         language_code: u.language_code ?? null,
-        photo_url: u.photo_url ?? null, // backend maps this to profile_photo_url
+        photo_url: u.photo_url ?? null,
     };
 }
 
 async function syncProfile() {
     const info = getTWAUser();
-    if (!info) return; // skip if not in Telegram
+    if (!info) return;
     try {
         await apiRequest('/player/syncProfile', 'POST', info);
     } catch (e) {
@@ -744,9 +680,8 @@ async function syncProfile() {
     }
 }
 
-// --- Initialization and Event Listeners ---
 async function init() {
-    let userId; // declare here
+    let userId;
 
     tg.ready(() => {
         tg.expand();
@@ -754,22 +689,18 @@ async function init() {
         userId = u?.id ?? Date.now();
         initGame();
     });
-    
+
     tg.expand();
 
-    // ensure we have the final Telegram user id
     const u = tg?.initDataUnsafe?.user;
     if (u?.id) userId = u.id;
 
-    // 1) sync Telegram profile to DB (username, names, photo, language)
     await syncProfile();
     await initTasksSystem();
 
-    // Update score-based tasks
     updateTaskProgress('score');
 
     try {
-        // 2) now load/create the player row
         playerData = await apiRequest(`/player/${userId}`);
         score = new Decimal(playerData.score);
         clickValue = new Decimal(playerData.click_value);
@@ -790,26 +721,19 @@ async function init() {
     }
 }
 
-
 function setupEventListeners() {
-    // This part is for the main bottom navigation, it's already correct.
     for (const key in navButtons) {
-        if (navButtons[key] && key !== 'leaderboard') { // Exclude leaderboard to handle it specially
+        if (navButtons[key] && key !== 'leaderboard') {
             navButtons[key].onclick = () => showPage(key);
         }
     }
 
-    // --- THE FIX IS HERE ---
-    // We now use a single selector for all tab links
     document.querySelectorAll('.tab-link').forEach(tab => {
         tab.onclick = (event) => {
             const currentNav = event.currentTarget.parentElement;
-            // Remove 'active' from sibling tabs within the same navigation group
             currentNav.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
-            // Add 'active' to the clicked tab
             event.currentTarget.classList.add('active');
 
-            // Check which page we're on to decide what action to take
             if (currentNav.parentElement.id === 'upgrades') {
                 openUpgradeTab(event.currentTarget.dataset.tab);
             } else if (currentNav.parentElement.id === 'leaderboard') {
@@ -818,31 +742,25 @@ function setupEventListeners() {
         };
     });
 
-    // We also need to simplify the 'openUpgradeTab' function since the active class is handled above.
     function openUpgradeTab(tabName) {
         const upgradesPage = document.getElementById('upgrades');
         upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(tabName).classList.add('active');
     }
 
-    // Special handler for the main leaderboard nav button to trigger the initial fetch
     navButtons.leaderboard.addEventListener('click', () => {
         showPage('leaderboard');
-        // Find the "Total Coins" tab using the NEW class and simulate a click to load data
         const defaultTab = document.querySelector('#leaderboard .tab-link[data-sort="score"]');
         if (defaultTab && !defaultTab.classList.contains('active')) {
             defaultTab.click();
         } else if (!document.querySelector('.leaderboard-item')) {
-            // If the tab is already active but the list is empty, re-fetch
             fetchAndDisplayLeaderboard('score');
         }
     });
 
-
-    // The rest of your event listeners
     coinImageEl.addEventListener('mousedown', () => {
         if (!playerData) return;
-        score = score.plus(clickValue); // Use local clickValue
+        score = score.plus(clickValue);
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
 
@@ -850,17 +768,15 @@ function setupEventListeners() {
         updateTaskProgress('clicks_5s', 0);
 
         coinImageEl.classList.remove('bounce');
-        void coinImageEl.offsetWidth; // Trigger reflow
+        void coinImageEl.offsetWidth;
         coinImageEl.classList.add('bounce');
 
-        updateUI(); // Update score immediately on click
+        updateUI();
     });
-
 
     coinImageEl.addEventListener('touchstart', (event) => {
         if (!playerData) return;
         event.preventDefault();
-
         score = score.plus(clickValue);
         clicksThisSecond++;
         tg.HapticFeedback.impactOccurred('light');
@@ -868,7 +784,6 @@ function setupEventListeners() {
         coinImageEl.classList.remove('bounce');
         void coinImageEl.offsetWidth;
         coinImageEl.classList.add('bounce');
-
         updateUI();
     }, { passive: false });
 
@@ -887,13 +802,9 @@ function setupEventListeners() {
         });
     });
 
-    // Don't forget to call setupTransactionSearch
     setupTransactionSearch();
-
-
     document.getElementById('send-btn').addEventListener('click', handleSendCoins);
 
-    // Fetch history when the wallet page is shown
     navButtons.transactions.addEventListener('click', () => {
         showPage('transactions');
         fetchTransactionHistory();
@@ -901,17 +812,12 @@ function setupEventListeners() {
 
     setInterval(() => {
         cpsElement.textContent = `${clicksThisSecond} CPS`;
-        clicksThisSecond = 0; // Reset manual clicks per second
+        clicksThisSecond = 0;
     }, 1000);
 
-    // Sync only the score and last_updated to the backend
     setInterval(() => {
         if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
     }, SYNC_INTERVAL);
 }
 
-
-
-
-// --- Start the game ---
 init();
