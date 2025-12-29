@@ -754,20 +754,34 @@ async function loadGameState() {
                     isActive: state.team.isActive || false
                 },
                 recentWinners: state.recentWinners || [],
-                yourBets: state.yourBets || {
-                    solo: new Decimal(0),
-                    team: null
+                yourBets: {
+                    solo: new Decimal(state.yourBets?.solo || 0),
+                    team: state.yourBets?.team || null
                 }
             };
         }
     } catch (error) {
         console.error('Failed to load game state:', error);
-        if (!gameState.solo.endTime || new Date() > gameState.solo.endTime) {
-            startNewSoloGame();
-        }
-        if (!gameState.team.endTime || new Date() > gameState.team.endTime) {
-            startNewTeamGame();
-        }
+
+        gameState = {
+            solo: {
+                pot: new Decimal(0),
+                participants: [],
+                endTime: new Date(Date.now() + SOLO_LOTTERY_DURATION),
+                isActive: true
+            },
+            team: {
+                teams: [],
+                pot: new Decimal(0),
+                endTime: new Date(Date.now() + TEAM_LOTTERY_DURATION),
+                isActive: true
+            },
+            recentWinners: [],
+            yourBets: {
+                solo: new Decimal(0), 
+                team: null
+            }
+        };
     }
 }
 
@@ -1138,49 +1152,76 @@ function updateGamesUI() {
     document.getElementById('games-balance').textContent = score.toFixed(9);
     
     document.getElementById('solo-pot').textContent = gameState.solo.pot.toFixed(9);
-    document.getElementById('your-solo-bet').textContent = gameState.yourBets.solo.toFixed(9);
+    document.getElementById('your-solo-bet').textContent = 
+        typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed 
+            ? gameState.yourBets.solo.toFixed(9) 
+            : new Decimal(gameState.yourBets.solo || 0).toFixed(9);
+    
     document.getElementById('solo-participants-count').textContent = gameState.solo.participants.length;
     
+
     const soloParticipantsContainer = document.getElementById('solo-participants');
     soloParticipantsContainer.innerHTML = gameState.solo.participants
-        .sort((a, b) => new Decimal(b.bet).minus(new Decimal(a.bet)).toNumber())
-        .map(p => `
-            <div class="participant-item">
-                <span class="participant-name">${p.username}</span>
-                <span class="participant-bet">${new Decimal(p.bet).toFixed(9)} (${p.percentage || 0}%)</span>
-            </div>
-        `).join('');
+        .sort((a, b) => {
+            const betA = new Decimal(a.bet || 0);
+            const betB = new Decimal(b.bet || 0);
+            return betB.minus(betA).toNumber();
+        })
+        .map(p => {
+            const bet = new Decimal(p.bet || 0);
+            return `
+                <div class="participant-item">
+                    <span class="participant-name">${p.username || 'Anonymous'}</span>
+                    <span class="participant-bet">${bet.toFixed(9)} (${p.percentage || 0}%)</span>
+                </div>
+            `;
+        }).join('');
     
     document.getElementById('team-pot').textContent = gameState.team.pot.toFixed(9);
-    document.getElementById('your-team-bet').textContent = gameState.yourBets.team ? 
-        gameState.team.teams.find(t => t.id === gameState.yourBets.team)?.total.toFixed(9) || '0' : '0';
+    
+    const teamBetText = gameState.yourBets.team ? 
+        (() => {
+            const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
+            if (!team) return '0';
+            const total = new Decimal(team.total || 0);
+            return total.toFixed(9);
+        })() : '0';
+    
+    document.getElementById('your-team-bet').textContent = teamBetText;
     
     document.getElementById('active-teams-count').textContent = gameState.team.teams.length;
     
     const teamsContainer = document.getElementById('teams-container');
     teamsContainer.innerHTML = gameState.team.teams
-        .sort((a, b) => new Decimal(b.total).minus(new Decimal(a.total)).toNumber())
-        .map(team => `
-            <div class="team-item" data-team-id="${team.id}">
-                <div>
-                    <div class="team-name">${team.name}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                        ${team.members.length}/10 members
+        .sort((a, b) => {
+            const totalA = new Decimal(a.total || 0);
+            const totalB = new Decimal(b.total || 0);
+            return totalB.minus(totalA).toNumber();
+        })
+        .map(team => {
+            const total = new Decimal(team.total || 0);
+            return `
+                <div class="team-item" data-team-id="${team.id}">
+                    <div>
+                        <div class="team-name">${team.name || 'Unnamed Team'}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            ${team.members?.length || 0}/10 members
+                        </div>
                     </div>
+                    <span class="team-total">${total.toFixed(9)}</span>
                 </div>
-                <span class="team-total">${new Decimal(team.total).toFixed(9)}</span>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     
     const winnersContainer = document.getElementById('recent-winners');
     winnersContainer.innerHTML = gameState.recentWinners
         .map(winner => `
             <div class="winner-item">
                 <div>
-                    <div class="winner-name">${winner.username}</div>
-                    <div class="winner-date">${new Date(winner.date).toLocaleDateString()}</div>
+                    <div class="winner-name">${winner.username || 'Anonymous'}</div>
+                    <div class="winner-date">${new Date(winner.date || Date.now()).toLocaleDateString()}</div>
                 </div>
-                <div class="winner-amount">+${winner.amount}</div>
+                <div class="winner-amount">+${winner.amount || '0'}</div>
             </div>
         `).join('');
 }
