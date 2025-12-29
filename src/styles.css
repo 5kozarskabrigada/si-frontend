@@ -349,7 +349,7 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
     z-index: 100;
@@ -389,7 +389,6 @@ body {
     background: rgba(142, 68, 173, 0.15);
 }
 
-/* FIXED TYPO HERE: added . before nav-btn */
 .nav-btn.active svg {
     fill: var(--primary-accent);
     transform: scale(1.1);
@@ -852,4 +851,375 @@ body {
 
 .tx-amount.sent {
     color: #e74c3c;
+}
+
+#games.page {
+    padding: 1rem;
+    background: var(--bg-primary);
+}
+
+.games-header {
+    margin-bottom: 1.5rem;
+}
+
+.balance-display {
+    background: linear-gradient(135deg, var(--primary-accent), #9b59b6);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.balance-label {
+    display: block;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+}
+
+.balance-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.games-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.game-card {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.game-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.game-card-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text-primary);
+}
+
+.game-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    background: #2ecc71;
+    color: white;
+}
+
+.game-status.ended {
+    background: #e74c3c;
+}
+
+.game-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-row span:first-child {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.stat-row span:last-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pot-amount {
+    color: #2ecc71 !important;
+    font-size: 1.1rem;
+}
+
+.your-bet {
+    color: var(--primary-accent) !important;
+}
+
+.timer {
+    color: #f39c12 !important;
+    font-family: monospace;
+    font-size: 1rem;
+}
+
+.team-size {
+    color: #3498db !important;
+}
+
+.bet-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.bet-amount-input {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.bet-amount-input input {
+    flex-grow: 1;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.bet-amount-input input:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 2px var(--primary-accent-glow);
+}
+
+.quick-bet-btn {
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.quick-bet-btn:hover {
+    background: var(--primary-accent);
+    border-color: var(--primary-accent);
+}
+
+.join-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--primary-accent);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.join-btn:hover:not(:disabled) {
+    background: var(--light-purple);
+    transform: translateY(-2px);
+}
+
+.join-btn:disabled {
+    background: #333;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.team-btn {
+    background: #3498db;
+}
+
+.team-btn:hover:not(:disabled) {
+    background: #5dade2;
+}
+
+.create-team-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: transparent;
+    border: 2px solid #3498db;
+    color: #3498db;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.create-team-btn:hover {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.participants-list,
+.teams-list {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.participants-list h4,
+.teams-list h4 {
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.participants-container,
+.teams-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.participant-item,
+.team-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.participant-name,
+.team-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.participant-bet,
+.team-total {
+    font-weight: 600;
+    color: var(--primary-accent);
+}
+
+.winners-card {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.winners-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.winners-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.winner-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: linear-gradient(90deg, rgba(46, 204, 113, 0.1), transparent);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.winner-name {
+    font-weight: 600;
+    color: #2ecc71;
+}
+
+.winner-amount {
+    font-weight: 700;
+    color: #2ecc71;
+    font-size: 1.1rem;
+}
+
+.winner-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.game-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-surface-solid);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    border: 2px solid var(--primary-accent);
+    animation: modalAppear 0.3s ease;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.win-animation {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: winPulse 1s infinite;
+}
+
+@keyframes winPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.modal-prize {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #2ecc71;
+    margin-bottom: 1.5rem;
+}
+
+.close-modal {
+    padding: 0.75rem 2rem;
+    background: var(--primary-accent);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 700;
+    cursor: pointer;
 }

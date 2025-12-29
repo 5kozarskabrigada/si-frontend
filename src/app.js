@@ -18,6 +18,7 @@ const pages = {
     leaderboard: document.getElementById('leaderboard'),
     skins: document.getElementById('skins'),
     transactions: document.getElementById('transactions'),
+     game: document.getElementById('game'),
 };
 const navButtons = {
     clicker: document.getElementById('nav-clicker'),
@@ -26,6 +27,7 @@ const navButtons = {
     leaderboard: document.getElementById('nav-leaderboard'),
     skins: document.getElementById('nav-skins'),
     transactions: document.getElementById('nav-transactions'),
+    game: document.getElementById('nav-game'),
 };
 
 
@@ -49,7 +51,9 @@ const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
 let lastFrameTime = Date.now();
 
-// REMOVED: Unused physics variables (scale, BUMP_AMOUNT, etc)
+const SOLO_LOTTERY_DURATION = 5 * 60 * 1000;
+const TEAM_LOTTERY_DURATION = 10 * 60 * 1000;
+const HOUSE_FEE = 0.01;
 
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
 const upgrades = {
@@ -103,6 +107,27 @@ const tasksSystem = {
         { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
         { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false }
     ]
+};
+
+
+let gameState = {
+    solo: {
+        pot: new Decimal(0),
+        participants: [],
+        endTime: null,
+        isActive: false
+    },
+    team: {
+        teams: [],
+        pot: new Decimal(0),
+        endTime: null,
+        isActive: false
+    },
+    recentWinners: [],
+    yourBets: {
+        solo: new Decimal(0),
+        team: null
+    }
 };
 
 async function initTasksSystem() {
@@ -679,6 +704,71 @@ async function syncProfile() {
         console.warn('Profile sync failed:', e?.message || e);
     }
 }
+
+async function initGames() {
+    await loadGameState();
+    setupGameEventListeners();
+    startGameTimers();
+    updateGamesUI();
+}
+
+
+async function loadGameState() {
+    try {
+        const state = await apiRequest(`/games/state/${userId}`);
+        if (state) {
+            gameState = {
+                solo: {
+                    pot: new Decimal(state.solo.pot || 0),
+                    participants: state.solo.participants || [],
+                    endTime: state.solo.endTime ? new Date(state.solo.endTime) : null,
+                    isActive: state.solo.isActive || false
+                },
+                team: {
+                    teams: state.team.teams || [],
+                    pot: new Decimal(state.team.pot || 0),
+                    endTime: state.team.endTime ? new Date(state.team.endTime) : null,
+                    isActive: state.team.isActive || false
+                },
+                recentWinners: state.recentWinners || [],
+                yourBets: state.yourBets || {
+                    solo: new Decimal(0),
+                    team: null
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Failed to load game state:', error);
+        if (!gameState.solo.endTime || new Date() > gameState.solo.endTime) {
+            startNewSoloGame();
+        }
+        if (!gameState.team.endTime || new Date() > gameState.team.endTime) {
+            startNewTeamGame();
+        }
+    }
+}
+
+
+async function startNewSoloGame() {
+    gameState.solo = {
+        pot: new Decimal(0),
+        participants: [],
+        endTime: new Date(Date.now() + SOLO_LOTTERY_DURATION),
+        isActive: true
+    };
+    await saveGameState();
+}
+
+async function startNewTeamGame() {
+    gameState.team = {
+        teams: [],
+        pot: new Decimal(0),
+        endTime: new Date(Date.now() + TEAM_LOTTERY_DURATION),
+        isActive: true
+    };
+    await saveGameState();
+}
+
 
 async function init() {
     let userId;

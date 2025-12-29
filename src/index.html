@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -65,9 +64,7 @@
                     <button class="tab-link" data-sort="click_value">Per Click</button>
                     <button class="tab-link" data-sort="auto_click_rate">Per Second</button>
                 </div>
-                <div id="leaderboard-list" class="leaderboard-list">
-
-                </div>
+                <div id="leaderboard-list" class="leaderboard-list"></div>
             </section>
 
 
@@ -84,21 +81,114 @@
                         <h3>Today's Tasks</h3>
                         <div class="refresh-info">Refreshes in <span id="refresh-timer">24:00:00</span></div>
                     </div>
-                    <div id="daily-tasks-list" class="tasks-list">
-
-                    </div>
+                    <div id="daily-tasks-list" class="tasks-list"></div>
                 </div>
 
                 <div id="achievements" class="tasks-tab-content">
-                    <div id="achievements-list" class="tasks-list">
-
-                    </div>
+                    <div id="achievements-list" class="tasks-list"></div>
                 </div>
             </section>
 
 
             <section id="skins" class="page">
                 <h1 class="page-title"><span class="title-icon">🎨</span>Skins</h1>
+            </section>
+
+            <section id="games" class="page">
+                <h1 class="page-title"><span class="title-icon">🎰</span>Games</h1>
+                
+                <div class="games-header">
+                    <div class="balance-display">
+                        <span class="balance-label">Your Balance:</span>
+                        <span id="games-balance" class="balance-amount">0.000000000</span>
+                    </div>
+                </div>
+
+                <div class="games-container">
+                    <div class="game-card">
+                        <div class="game-card-header">
+                            <h3>Solo Lottery</h3>
+                            <span class="game-status active">ACTIVE</span>
+                        </div>
+                        <div class="game-stats">
+                            <div class="stat-row">
+                                <span>Current Pot:</span>
+                                <span id="solo-pot" class="pot-amount">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Your Bet:</span>
+                                <span id="your-solo-bet" class="your-bet">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Time Left:</span>
+                                <span id="solo-timer" class="timer">05:00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bet-controls">
+                            <div class="bet-amount-input">
+                                <input type="number" id="solo-bet-amount" placeholder="Enter amount" min="0.000000001" step="0.000000001">
+                                <button class="quick-bet-btn" data-multiplier="0.5">1.5x</button>
+                                <button class="quick-bet-btn" data-multiplier="2">2×</button>
+                                <button class="quick-bet-btn" data-multiplier="10">10×</button>
+                            </div>
+                            <button id="join-solo-btn" class="join-btn">Join Game</button>
+                        </div>
+                        
+                        <div class="participants-list">
+                            <h4>Participants (<span id="solo-participants-count">0</span>)</h4>
+                            <div id="solo-participants" class="participants-container">
+                        </div>
+                    </div>
+
+                    <div class="game-card">
+                        <div class="game-card-header">
+                            <h3>Team Lottery</h3>
+                            <span class="game-status active">ACTIVE</span>
+                        </div>
+                        <div class="game-stats">
+                            <div class="stat-row">
+                                <span>Team Pot:</span>
+                                <span id="team-pot" class="pot-amount">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Your Bet:</span>
+                                <span id="your-team-bet" class="your-bet">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Time Left:</span>
+                                <span id="team-timer" class="timer">10:00</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Team Size:</span>
+                                <span id="team-size" class="team-size">0/10</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bet-controls">
+                            <div class="bet-amount-input">
+                                <input type="number" id="team-bet-amount" placeholder="Enter amount" min="0.000000001" step="0.000000001">
+                                <button class="quick-bet-btn" data-multiplier="0.5">1.5</button>
+                                <button class="quick-bet-btn" data-multiplier="2">2×</button>
+                                <button class="quick-bet-btn" data-multiplier="10">10×</button>
+                            </div>
+                            <button id="join-team-btn" class="join-btn team-btn">Join Team</button>
+                            <button id="create-team-btn" class="create-team-btn">Create New Team</button>
+                        </div>
+                        
+                        <div class="teams-list">
+                            <h4>Active Teams (<span id="active-teams-count">0</span>)</h4>
+                            <div id="teams-container" class="teams-container">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="winners-card">
+                        <h3>🏆 Recent Winners</h3>
+                        <div id="recent-winners" class="winners-list">
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="transactions" class="page">
@@ -118,17 +208,16 @@
                     <div id="transfer-status" class="status-message"></div>
                 </div>
 
-            <div class="wallet-card">
-                <h2>History</h2>
-                <div class="search-container">
-                    <input type="text" id="transaction-search" placeholder="Search transactions..." class="search-input">
+                <div class="wallet-card">
+                    <h2>History</h2>
+                    <div class="search-container">
+                        <input type="text" id="transaction-search" placeholder="Search transactions..." class="search-input">
+                    </div>
+                    <div id="transaction-history-list">
+                        <p>No transactions yet</p>
+                    </div>
                 </div>
-                <div id="transaction-history-list">
-                    <p>No transactions yet.</p>
-                </div>
-            </div>
-
-        </div>
+            </section>
 
         <nav class="bottom-nav">
             <button id="nav-upgrades" class="nav-btn">
@@ -177,6 +266,13 @@
                         d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-8 6h-2v2h2v2h-2v2h2v2h-4v-4h2v-2h-2V8h2v2zm4 6h-2v2h2v-2zm0-4h-2v2h2v-2zm0-4h-2v2h2V8z" />
                 </svg>
                 <span class="nav-text">Wallet</span>
+            </button>
+
+            <button id="nav-games" class="nav-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/>
+            </svg>
+            <span class="nav-text">Games</span>
             </button>
         </nav>
     </div>
