@@ -18,7 +18,8 @@ const pages = {
     leaderboard: document.getElementById('leaderboard'),
     skins: document.getElementById('skins'),
     transactions: document.getElementById('transactions'),
-     game: document.getElementById('game'),
+    games: document.getElementById('games'),
+    game: document.getElementById('game'),
 };
 const navButtons = {
     clicker: document.getElementById('nav-clicker'),
@@ -27,6 +28,7 @@ const navButtons = {
     leaderboard: document.getElementById('nav-leaderboard'),
     skins: document.getElementById('nav-skins'),
     transactions: document.getElementById('nav-transactions'),
+    games: document.getElementById('nav-games'), 
     game: document.getElementById('nav-game'),
 };
 
