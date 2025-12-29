@@ -380,7 +380,30 @@ style.textContent = `
         80% { opacity: 1; transform: translate(-50%, -50%); }
         100% { opacity: 0; transform: translate(-50%, -60%); }
     }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+    }
 `;
+document.head.appendChild(style);
 document.head.appendChild(style);
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
@@ -1285,56 +1308,67 @@ function showGameModal(title, message, emoji = '🎉') {
     }, 5000);
 }
 
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    }
-    
-    @keyframes slideUp {
-        from {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-20px);
-        }
-    }
-`;
-document.head.appendChild(style);
+
+
 
 initGames();
 
 
-async function init() {
-    let userId;
+// async function init() {
+//     let userId;
 
+//     tg.ready(() => {
+//         tg.expand();
+//         const u = tg?.initDataUnsafe?.user;
+//         userId = u?.id ?? Date.now();
+//         initGame();
+//     });
+
+//     tg.expand();
+
+//     const u = tg?.initDataUnsafe?.user;
+//     if (u?.id) userId = u.id;
+//     await initGames();
+//     await syncProfile();
+//     await initTasksSystem();
+
+//     updateTaskProgress('score');
+
+//     try {
+//         playerData = await apiRequest(`/player/${userId}`);
+//         score = new Decimal(playerData.score);
+//         clickValue = new Decimal(playerData.click_value);
+//         autoClickRate = new Decimal(playerData.auto_click_rate);
+
+//         generateUpgradesHTML();
+//         setupEventListeners();
+//         updateUI();
+//         setupTransactionSearch();
+
+//         lastFrameTime = Date.now();
+//         requestAnimationFrame(gameLoop);
+
+//         loadingOverlay.classList.remove('active');
+//     } catch (error) {
+//         console.error("Initialization failed:", error);
+//         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
+//     }
+// }
+
+async function init() {
     tg.ready(() => {
         tg.expand();
-        const u = tg?.initDataUnsafe?.user;
-        userId = u?.id ?? Date.now();
-        initGame();
     });
-
-    tg.expand();
 
     const u = tg?.initDataUnsafe?.user;
     if (u?.id) userId = u.id;
-    await initGames();
-    await syncProfile();
-    await initTasksSystem();
-
-    updateTaskProgress('score');
 
     try {
+
+        await syncProfile();
+        await initGames();
+        await initTasksSystem();
+        
         playerData = await apiRequest(`/player/${userId}`);
         score = new Decimal(playerData.score);
         clickValue = new Decimal(playerData.click_value);
@@ -1343,12 +1377,16 @@ async function init() {
         generateUpgradesHTML();
         setupEventListeners();
         updateUI();
+        updateGamesUI(); 
         setupTransactionSearch();
 
         lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
 
         loadingOverlay.classList.remove('active');
+        
+        updateTaskProgress('score');
+        
     } catch (error) {
         console.error("Initialization failed:", error);
         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
@@ -1438,6 +1476,8 @@ function setupEventListeners() {
 
     setupTransactionSearch();
     document.getElementById('send-btn').addEventListener('click', handleSendCoins);
+
+    navButtons.games.onclick = () => showPage('games');
 
     navButtons.transactions.addEventListener('click', () => {
         showPage('transactions');
