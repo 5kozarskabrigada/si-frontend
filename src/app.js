@@ -705,13 +705,13 @@ async function syncProfile() {
     }
 }
 
+
 async function initGames() {
     await loadGameState();
     setupGameEventListeners();
     startGameTimers();
     updateGamesUI();
 }
-
 
 async function loadGameState() {
     try {
@@ -748,7 +748,6 @@ async function loadGameState() {
     }
 }
 
-
 async function startNewSoloGame() {
     gameState.solo = {
         pot: new Decimal(0),
@@ -769,6 +768,551 @@ async function startNewTeamGame() {
     await saveGameState();
 }
 
+async function saveGameState() {
+    try {
+        await apiRequest('/games/save', 'POST', {
+            userId,
+            gameState: {
+                solo: {
+                    pot: gameState.solo.pot.toFixed(9),
+                    participants: gameState.solo.participants,
+                    endTime: gameState.solo.endTime,
+                    isActive: gameState.solo.isActive
+                },
+                team: {
+                    teams: gameState.team.teams,
+                    pot: gameState.team.pot.toFixed(9),
+                    endTime: gameState.team.endTime,
+                    isActive: gameState.team.isActive
+                },
+                recentWinners: gameState.recentWinners,
+                yourBets: {
+                    solo: gameState.yourBets.solo.toFixed(9),
+                    team: gameState.yourBets.team
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Failed to save game state:', error);
+    }
+}
+
+async function joinSoloLottery() {
+    const betAmountInput = document.getElementById('solo-bet-amount');
+    const betAmount = new Decimal(betAmountInput.value || '0');
+    
+    if (betAmount.isZero() || betAmount.isNegative()) {
+        showGameNotification('Please enter a valid bet amount', 'error');
+        return;
+    }
+    
+    if (score.lessThan(betAmount)) {
+        showGameNotification('Insufficient funds', 'error');
+        return;
+    }
+    
+    try {
+        score = score.minus(betAmount);
+        
+        const actualBet = betAmount.times(1 - HOUSE_FEE);
+        const fee = betAmount.minus(actualBet);
+        
+        gameState.solo.pot = gameState.solo.pot.plus(actualBet);
+        
+        const existingIndex = gameState.solo.participants.findIndex(p => p.userId === userId);
+        if (existingIndex >= 0) {
+            gameState.solo.participants[existingIndex].bet = gameState.solo.participants[existingIndex].bet.plus(actualBet);
+        } else {
+            gameState.solo.participants.push({
+                userId,
+                username: userName,
+                bet: actualBet,
+                percentage: 0
+            });
+        }
+        
+        gameState.yourBets.solo = gameState.yourBets.solo.plus(actualBet);
+        
+        await saveGameState();
+        
+        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+        
+        updateUI();
+        updateGamesUI();
+        
+        showGameNotification(`Joined solo lottery with ${actualBet.toFixed(9)} coins (1% fee applied)`, 'success');
+        tg.HapticFeedback.notificationOccurred('success');
+        
+    } catch (error) {
+        console.error('Failed to join solo lottery:', error);
+        showGameNotification('Failed to join lottery', 'error');
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+async function joinTeamLottery(teamId) {
+    const betAmountInput = document.getElementById('team-bet-amount');
+    const betAmount = new Decimal(betAmountInput.value || '0');
+    
+    if (betAmount.isZero() || betAmount.isNegative()) {
+        showGameNotification('Please enter a valid bet amount', 'error');
+        return;
+    }
+    
+    if (score.lessThan(betAmount)) {
+        showGameNotification('Insufficient funds', 'error');
+        return;
+    }
+    
+    const team = gameState.team.teams.find(t => t.id === teamId);
+    if (!team) {
+        showGameNotification('Team not found', 'error');
+        return;
+    }
+    
+    if (team.members.length >= 10) {
+        showGameNotification('Team is full', 'error');
+        return;
+    }
+    
+    if (gameState.yourBets.team && gameState.yourBets.team !== teamId) {
+        showGameNotification('You are already in another team', 'error');
+        return;
+    }
+    
+    try {
+        score = score.minus(betAmount);
+        
+        const actualBet = betAmount.times(1 - HOUSE_FEE);
+        const fee = betAmount.minus(actualBet);
+        
+        const memberIndex = team.members.findIndex(m => m.userId === userId);
+        if (memberIndex >= 0) {
+            team.members[memberIndex].bet = team.members[memberIndex].bet.plus(actualBet);
+        } else {
+            team.members.push({
+                userId,
+                username: userName,
+                bet: actualBet
+            });
+        }
+        
+        team.total = team.members.reduce((sum, member) => sum.plus(new Decimal(member.bet)), new Decimal(0));
+        
+        gameState.team.pot = gameState.team.pot.plus(actualBet);
+        
+        gameState.yourBets.team = teamId;
+        
+        await saveGameState();
+        
+        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+        
+        updateUI();
+        updateGamesUI();
+        
+        showGameNotification(`Joined team "${team.name}" with ${actualBet.toFixed(9)} coins`, 'success');
+        tg.HapticFeedback.notificationOccurred('success');
+        
+    } catch (error) {
+        console.error('Failed to join team lottery:', error);
+        showGameNotification('Failed to join team', 'error');
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+async function createNewTeam() {
+    const betAmountInput = document.getElementById('team-bet-amount');
+    const betAmount = new Decimal(betAmountInput.value || '0');
+    
+    if (betAmount.isZero() || betAmount.isNegative()) {
+        showGameNotification('Please enter a valid bet amount', 'error');
+        return;
+    }
+    
+    if (score.lessThan(betAmount)) {
+        showGameNotification('Insufficient funds', 'error');
+        return;
+    }
+    
+    const teamName = prompt('Enter team name (max 20 characters):');
+    if (!teamName || teamName.trim().length === 0 || teamName.length > 20) {
+        showGameNotification('Invalid team name', 'error');
+        return;
+    }
+    
+    try {
+        score = score.minus(betAmount);
+        
+        const actualBet = betAmount.times(1 - HOUSE_FEE);
+        const fee = betAmount.minus(actualBet);
+        
+
+        const teamId = Date.now().toString();
+        const newTeam = {
+            id: teamId,
+            name: teamName.trim(),
+            total: actualBet,
+            members: [{
+                userId,
+                username: userName,
+                bet: actualBet
+            }],
+            creatorId: userId
+        };
+        
+        gameState.team.teams.push(newTeam);
+        
+        gameState.team.pot = gameState.team.pot.plus(actualBet);
+    
+        gameState.yourBets.team = teamId;
+        
+        await saveGameState();
+        
+        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+        
+        updateUI();
+        updateGamesUI();
+        
+        showGameNotification(`Created team "${teamName}" with ${actualBet.toFixed(9)} coins`, 'success');
+        tg.HapticFeedback.notificationOccurred('success');
+        
+    } catch (error) {
+        console.error('Failed to create team:', error);
+        showGameNotification('Failed to create team', 'error');
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+async function drawSoloWinner() {
+    if (gameState.solo.participants.length === 0) {
+        await startNewSoloGame();
+        return;
+    }
+    
+    const totalPot = gameState.solo.pot;
+    gameState.solo.participants.forEach(participant => {
+        participant.percentage = (new Decimal(participant.bet).dividedBy(totalPot).times(100)).toDecimalPlaces(2);
+    });
+    
+    let random = Math.random() * 100;
+    let winner = null;
+    
+    for (const participant of gameState.solo.participants) {
+        if (random <= participant.percentage) {
+            winner = participant;
+            break;
+        }
+        random -= participant.percentage;
+    }
+    
+    if (!winner) {
+        winner = gameState.solo.participants[Math.floor(Math.random() * gameState.solo.participants.length)];
+    }
+    
+    const prize = totalPot;
+    
+    try {
+        await apiRequest('/player/add-coins', 'POST', {
+            userId: winner.userId,
+            amount: prize.toFixed(9)
+        });
+        
+        gameState.recentWinners.unshift({
+            game: 'solo',
+            username: winner.username,
+            amount: prize.toFixed(9),
+            date: new Date().toISOString()
+        });
+        
+        if (gameState.recentWinners.length > 10) {
+            gameState.recentWinners = gameState.recentWinners.slice(0, 10);
+        }
+        
+        if (winner.userId === userId) {
+            showGameModal(`🎉 YOU WON!`, `${prize.toFixed(9)} coins!`, '💰');
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+        
+        await startNewSoloGame();
+        
+        updateGamesUI();
+        
+    } catch (error) {
+        console.error('Failed to award solo prize:', error);
+    }
+}
+
+async function drawTeamWinner() {
+    if (gameState.team.teams.length === 0) {
+        await startNewTeamGame();
+        return;
+    }
+    
+    const teamTotals = gameState.team.teams.map(team => ({
+        team,
+        total: new Decimal(team.total)
+    }));
+    
+    const totalPot = gameState.team.pot;
+    let random = Math.random() * 100;
+    let winningTeam = null;
+    let accumulated = 0;
+    
+    for (const teamData of teamTotals) {
+        const percentage = teamData.total.dividedBy(totalPot).times(100);
+        accumulated += percentage.toNumber();
+        if (random <= accumulated) {
+            winningTeam = teamData.team;
+            break;
+        }
+    }
+    
+    if (!winningTeam) {
+        winningTeam = gameState.team.teams[Math.floor(Math.random() * gameState.team.teams.length)];
+    }
+    
+    const prize = totalPot;
+    
+    try {
+        for (const member of winningTeam.members) {
+            const share = new Decimal(member.bet).dividedBy(winningTeam.total).times(prize);
+            
+            await apiRequest('/player/add-coins', 'POST', {
+                userId: member.userId,
+                amount: share.toFixed(9)
+            });
+            
+            if (member.userId === userId) {
+                showGameModal(`🏆 TEAM WIN!`, `${share.toFixed(9)} coins!`, '👥');
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            
+            if (member.userId === winningTeam.creatorId) {
+                gameState.recentWinners.unshift({
+                    game: 'team',
+                    username: `${member.username} (Team: ${winningTeam.name})`,
+                    amount: share.toFixed(9),
+                    date: new Date().toISOString()
+                });
+            }
+        }
+        
+        if (gameState.recentWinners.length > 10) {
+            gameState.recentWinners = gameState.recentWinners.slice(0, 10);
+        }
+        
+        await startNewTeamGame();
+
+        updateGamesUI();
+        
+    } catch (error) {
+        console.error('Failed to award team prize:', error);
+    }
+}
+
+function updateGamesUI() {
+
+    document.getElementById('games-balance').textContent = score.toFixed(9);
+    
+    document.getElementById('solo-pot').textContent = gameState.solo.pot.toFixed(9);
+    document.getElementById('your-solo-bet').textContent = gameState.yourBets.solo.toFixed(9);
+    document.getElementById('solo-participants-count').textContent = gameState.solo.participants.length;
+    
+    const soloParticipantsContainer = document.getElementById('solo-participants');
+    soloParticipantsContainer.innerHTML = gameState.solo.participants
+        .sort((a, b) => new Decimal(b.bet).minus(new Decimal(a.bet)).toNumber())
+        .map(p => `
+            <div class="participant-item">
+                <span class="participant-name">${p.username}</span>
+                <span class="participant-bet">${new Decimal(p.bet).toFixed(9)} (${p.percentage || 0}%)</span>
+            </div>
+        `).join('');
+    
+    document.getElementById('team-pot').textContent = gameState.team.pot.toFixed(9);
+    document.getElementById('your-team-bet').textContent = gameState.yourBets.team ? 
+        gameState.team.teams.find(t => t.id === gameState.yourBets.team)?.total.toFixed(9) || '0' : '0';
+    
+    document.getElementById('active-teams-count').textContent = gameState.team.teams.length;
+    
+    const teamsContainer = document.getElementById('teams-container');
+    teamsContainer.innerHTML = gameState.team.teams
+        .sort((a, b) => new Decimal(b.total).minus(new Decimal(a.total)).toNumber())
+        .map(team => `
+            <div class="team-item" data-team-id="${team.id}">
+                <div>
+                    <div class="team-name">${team.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        ${team.members.length}/10 members
+                    </div>
+                </div>
+                <span class="team-total">${new Decimal(team.total).toFixed(9)}</span>
+            </div>
+        `).join('');
+    
+    const winnersContainer = document.getElementById('recent-winners');
+    winnersContainer.innerHTML = gameState.recentWinners
+        .map(winner => `
+            <div class="winner-item">
+                <div>
+                    <div class="winner-name">${winner.username}</div>
+                    <div class="winner-date">${new Date(winner.date).toLocaleDateString()}</div>
+                </div>
+                <div class="winner-amount">+${winner.amount}</div>
+            </div>
+        `).join('');
+}
+
+function startGameTimers() {
+    updateTimers();
+    setInterval(updateTimers, 1000);
+}
+
+function updateTimers() {
+    const now = new Date();
+    
+
+    if (gameState.solo.endTime && gameState.solo.isActive) {
+        const soloTimeLeft = Math.max(0, gameState.solo.endTime - now);
+        if (soloTimeLeft <= 0) {
+            drawSoloWinner();
+        } else {
+            const soloMinutes = Math.floor(soloTimeLeft / 60000);
+            const soloSeconds = Math.floor((soloTimeLeft % 60000) / 1000);
+            document.getElementById('solo-timer').textContent = 
+                `${soloMinutes.toString().padStart(2, '0')}:${soloSeconds.toString().padStart(2, '0')}`;
+        }
+    }
+    
+    if (gameState.team.endTime && gameState.team.isActive) {
+        const teamTimeLeft = Math.max(0, gameState.team.endTime - now);
+        if (teamTimeLeft <= 0) {
+            drawTeamWinner();
+        } else {
+            const teamMinutes = Math.floor(teamTimeLeft / 60000);
+            const teamSeconds = Math.floor((teamTimeLeft % 60000) / 1000);
+            document.getElementById('team-timer').textContent = 
+                `${teamMinutes.toString().padStart(2, '0')}:${teamSeconds.toString().padStart(2, '0')}`;
+        }
+    }
+}
+
+function setupGameEventListeners() {
+    document.querySelectorAll('.quick-bet-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const multiplier = parseFloat(e.target.dataset.multiplier);
+            const input = e.target.closest('.bet-amount-input').querySelector('input[type="number"]');
+            const currentValue = new Decimal(input.value || '0');
+            const newValue = currentValue.times(multiplier);
+            input.value = newValue.toFixed(9);
+        });
+    });
+    
+    document.getElementById('join-solo-btn').addEventListener('click', joinSoloLottery);
+    
+    document.getElementById('join-team-btn').addEventListener('click', () => {
+
+        const availableTeam = gameState.team.teams.find(team => team.members.length < 10);
+        if (availableTeam) {
+            joinTeamLottery(availableTeam.id);
+        } else {
+            showGameNotification('No available teams. Create a new team!', 'error');
+        }
+    });
+    
+    document.getElementById('create-team-btn').addEventListener('click', createNewTeam);
+    
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.team-item')) {
+            const teamItem = e.target.closest('.team-item');
+            const teamId = teamItem.dataset.teamId;
+            const team = gameState.team.teams.find(t => t.id === teamId);
+            if (team) {
+                if (confirm(`Join team "${team.name}"?`)) {
+                    joinTeamLottery(teamId);
+                }
+            }
+        }
+    });
+}
+
+function showGameNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        z-index: 1000;
+        animation: slideDown 0.3s ease-out;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideUp 0.3s ease-in';
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
+
+function showGameModal(title, message, emoji = '🎉') {
+    const modal = document.createElement('div');
+    modal.className = 'game-modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="win-animation">${emoji}</div>
+            <h3 class="modal-title">${title}</h3>
+            <div class="modal-prize">${message}</div>
+            <button class="close-modal">Claim Prize</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    setTimeout(() => {
+        if (document.body.contains(modal)) {
+            document.body.removeChild(modal);
+        }
+    }, 5000);
+}
+
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+    }
+`;
+document.head.appendChild(style);
+
+initGames();
+
 
 async function init() {
     let userId;
@@ -784,7 +1328,7 @@ async function init() {
 
     const u = tg?.initDataUnsafe?.user;
     if (u?.id) userId = u.id;
-
+    await initGames();
     await syncProfile();
     await initTasksSystem();
 
