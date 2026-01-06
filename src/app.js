@@ -458,12 +458,26 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 }
 
 function showPage(pageId) {
+    // If the target page or button is missing, just return
     if (!pages[pageId] || !navButtons[pageId]) return;
-    Object.values(pages).forEach(p => p.classList.remove('active'));
+
+    // Deactivate all existing pages (only if they exist)
+    Object.values(pages).forEach(p => {
+        if (p) p.classList.remove('active');
+    });
+
+    // Activate the requested page
     pages[pageId].classList.add('active');
-    Object.values(navButtons).forEach(b => b.classList.remove('active'));
+
+    // Deactivate all nav buttons (only if they exist)
+    Object.values(navButtons).forEach(b => {
+        if (b) b.classList.remove('active');
+    });
+
+    // Activate the requested nav button
     navButtons[pageId].classList.add('active');
 }
+
 
 function updateUI() {
     if (!playerData) return;
