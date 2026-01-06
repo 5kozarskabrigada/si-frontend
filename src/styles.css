@@ -899,12 +899,21 @@ body {
 }
 
 .balance-display {
-    background: linear-gradient(135deg, var(--primary-accent), #9b59b6);
     padding: 1rem;
     border-radius: var(--border-radius);
     text-align: center;
     margin-bottom: 1rem;
 }
+
+.balance-display {
+  background: linear-gradient(135deg, var(--primary-accent), var(--accent-teal));
+}
+
+.in-game {
+  border-color: var(--accent-green);
+  background: rgba(46, 204, 113, 0.06);
+}
+
 
 .balance-label {
     display: block;
@@ -953,13 +962,17 @@ body {
     font-weight: 600;
     padding: 0.25rem 0.75rem;
     border-radius: 2rem;
-    background: #2ecc71;
     color: white;
 }
 
-.game-status.ended {
-    background: #e74c3c;
+.game-status {
+  background: var(--accent-green);
 }
+.game-status.ended {
+  background: var(--accent-red);
+}
+
+
 
 .game-stats {
     display: flex;
@@ -998,6 +1011,10 @@ body {
     font-family: monospace;
     font-size: 1rem;
 }
+
+
+
+
 
 .team-size {
     color: #3498db !important;
@@ -1072,13 +1089,109 @@ body {
     opacity: 0.6;
 }
 
+#join-solo-btn {
+  background: linear-gradient(135deg, var(--primary-accent), var(--light-purple));
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 18px rgba(125, 60, 152, 0.5);
+  transform: translateY(0);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+#join-solo-btn:hover:not(:disabled) {
+  box-shadow: 0 10px 22px rgba(181, 134, 203, 0.6);
+  transform: translateY(-2px);
+}
+
+#join-solo-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(125, 60, 152, 0.4);
+}
+
+
+#withdraw-solo-btn {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, var(--accent-red), #ff7676);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 18px rgba(231, 76, 60, 0.45);
+  transform: translateY(0);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+#withdraw-solo-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  box-shadow: 0 10px 22px rgba(231, 76, 60, 0.4);
+  transform: translateY(-2px);
+}
+
+
 .team-btn {
-    background: #3498db;
+  background: linear-gradient(135deg, var(--accent-blue), #5dade2);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 18px rgba(52, 152, 219, 0.45);
+  transform: translateY(0);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .team-btn:hover:not(:disabled) {
-    background: #5dade2;
+  background: linear-gradient(135deg, #5dade2, #85c1e9);
+  box-shadow: 0 10px 22px rgba(52, 152, 219, 0.6);
+  transform: translateY(-2px);
 }
+
+.team-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+
+#join-solo-btn:disabled,
+#withdraw-solo-btn:disabled,
+.team-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+
+
+.participant-item {
+  background: linear-gradient(90deg, rgba(125,60,152,0.15), transparent);
+  border-color: rgba(125,60,152,0.4);
+}
+
+.team-item {
+  background: linear-gradient(90deg, rgba(52,152,219,0.12), transparent);
+  border-color: rgba(52,152,219,0.4);
+}
+
+.participant-bet {
+  color: var(--accent-green);
+    font-weight: 600;
+
+}
+
+.team-total {
+  color: var(--accent-blue);
+    font-weight: 600;
+
+}
+
 
 .create-team-btn {
     width: 100%;
@@ -1125,7 +1238,6 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    background: rgba(0, 0, 0, 0.2);
     border-radius: 0.5rem;
     border: 1px solid var(--border-color);
 }
@@ -1136,11 +1248,7 @@ body {
     color: var(--text-primary);
 }
 
-.participant-bet,
-.team-total {
-    font-weight: 600;
-    color: var(--primary-accent);
-}
+
 
 /* Winners card (simple list under games) */
 
