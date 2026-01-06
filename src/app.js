@@ -1,4 +1,4 @@
-document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
 
 const BACKEND_URL = 'https://si-backend-2i9b.onrender.com';
 const tg = window.Telegram.WebApp;
@@ -12,32 +12,32 @@ const perSecondElement = document.getElementById('per-second-stat');
 const coinImageEl = document.getElementById('coinImage');
 
 const pages = {
-    clicker: document.getElementById('clicker'),
-    upgrades: document.getElementById('upgrades'),
-    tasks: document.getElementById('tasks'),
-    leaderboard: document.getElementById('leaderboard'),
-    skins: document.getElementById('skins'),
-    transactions: document.getElementById('transactions'),
-    games: document.getElementById('games'),
+  clicker: document.getElementById('clicker'),
+  upgrades: document.getElementById('upgrades'),
+  tasks: document.getElementById('tasks'),
+  leaderboard: document.getElementById('leaderboard'),
+  skins: document.getElementById('skins'),
+  transactions: document.getElementById('transactions'),
+  games: document.getElementById('games'),
 };
 
 const navButtons = {
-    clicker: document.getElementById('nav-clicker'),
-    upgrades: document.getElementById('nav-upgrades'),
-    tasks: document.getElementById('nav-tasks'),
-    leaderboard: document.getElementById('nav-leaderboard'),
-    skins: document.getElementById('nav-skins'),
-    transactions: document.getElementById('nav-transactions'),
-    games: document.getElementById('nav-games'),
+  clicker: document.getElementById('nav-clicker'),
+  upgrades: document.getElementById('nav-upgrades'),
+  tasks: document.getElementById('nav-tasks'),
+  leaderboard: document.getElementById('nav-leaderboard'),
+  skins: document.getElementById('nav-skins'),
+  transactions: document.getElementById('nav-transactions'),
+  games: document.getElementById('nav-games'),
 };
 
 const userInfo = {
-    user_id: tg.initDataUnsafe?.user?.id,
-    username: tg.initDataUnsafe?.user?.username,
-    first_name: tg.initDataUnsafe?.user?.first_name,
-    last_name: tg.initDataUnsafe?.user?.last_name,
-    language_code: tg.initDataUnsafe?.user?.language_code,
-    photo_url: tg.initDataUnsafe?.user?.photo_url
+  user_id: tg.initDataUnsafe?.user?.id,
+  username: tg.initDataUnsafe?.user?.username,
+  first_name: tg.initDataUnsafe?.user?.first_name,
+  last_name: tg.initDataUnsafe?.user?.last_name,
+  language_code: tg.initDataUnsafe?.user?.language_code,
+  photo_url: tg.initDataUnsafe?.user?.photo_url,
 };
 
 let userId = tg.initDataUnsafe?.user?.id ?? Date.now();
@@ -52,356 +52,370 @@ const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
 let lastFrameTime = Date.now();
 
-const SOLO_LOTTERY_DURATION = 5 * 60 * 1000;
-const TEAM_LOTTERY_DURATION = 10 * 60 * 1000;
-const HOUSE_FEE = 0.01;
-
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
 
 const upgrades = {
-    click: {
-        click_tier_1: { name: 'A Cups', benefit: '+0.000000001 per click' },
-        click_tier_2: { name: 'B Cups', benefit: '+0.000000008 per click' },
-        click_tier_3: { name: 'C Cups', benefit: '+0.000000064 per click' },
-        click_tier_4: { name: 'D Cups', benefit: '+0.000000512 per click' },
-        click_tier_5: { name: 'DD Cups', benefit: '+0.000004096 per click' },
-    },
-    auto: {
-        auto_tier_1: { name: 'Basic Lotion', benefit: '+0.000000001 per sec' },
-        auto_tier_2: { name: 'Enhanced Serum', benefit: '+0.000000008 per sec' },
-        auto_tier_3: { name: 'Collagen Cream', benefit: '+0.000000064 per sec' },
-        auto_tier_4: { name: 'Firming Gel', benefit: '+0.000000512 per sec' },
-        auto_tier_5: { name: 'Miracle Elixir', benefit: '+0.000004096 per sec' },
-    },
-    offline: {
-        offline_tier_1: { name: 'Simple Bralette', benefit: '+0.000000001 per hour' },
-        offline_tier_2: { name: 'Sports Bra', benefit: '+0.000000008 per hour' },
-        offline_tier_3: { name: 'Padded Bra', benefit: '+0.000000064 per hour' },
-        offline_tier_4: { name: 'Push-Up Bra', benefit: '+0.000000512 per hour' },
-        offline_tier_5: { name: 'Designer Corset', benefit: '+0.000004096 per hour' },
-    }
+  click: {
+    click_tier_1: { name: 'A Cups', benefit: '+0.000000001 per click' },
+    click_tier_2: { name: 'B Cups', benefit: '+0.000000008 per click' },
+    click_tier_3: { name: 'C Cups', benefit: '+0.000000064 per click' },
+    click_tier_4: { name: 'D Cups', benefit: '+0.000000512 per click' },
+    click_tier_5: { name: 'DD Cups', benefit: '+0.000004096 per click' },
+  },
+  auto: {
+    auto_tier_1: { name: 'Basic Lotion', benefit: '+0.000000001 per sec' },
+    auto_tier_2: { name: 'Enhanced Serum', benefit: '+0.000000008 per sec' },
+    auto_tier_3: { name: 'Collagen Cream', benefit: '+0.000000064 per sec' },
+    auto_tier_4: { name: 'Firming Gel', benefit: '+0.000000512 per sec' },
+    auto_tier_5: { name: 'Miracle Elixir', benefit: '+0.000004096 per sec' },
+  },
+  offline: {
+    offline_tier_1: { name: 'Simple Bralette', benefit: '+0.000000001 per hour' },
+    offline_tier_2: { name: 'Sports Bra', benefit: '+0.000000008 per hour' },
+    offline_tier_3: { name: 'Padded Bra', benefit: '+0.000000064 per hour' },
+    offline_tier_4: { name: 'Push-Up Bra', benefit: '+0.000000512 per hour' },
+    offline_tier_5: { name: 'Designer Corset', benefit: '+0.000004096 per hour' },
+  },
 };
 
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'),
-    click_tier_2: new Decimal('0.000001024'),
-    click_tier_3: new Decimal('0.000016384'),
-    click_tier_4: new Decimal('0.000262144'),
-    click_tier_5: new Decimal('0.004194304'),
-    auto_tier_1: new Decimal('0.000000064'),
-    auto_tier_2: new Decimal('0.000001024'),
-    auto_tier_3: new Decimal('0.000016384'),
-    auto_tier_4: new Decimal('0.000262144'),
-    auto_tier_5: new Decimal('0.004194304'),
-    offline_tier_1: new Decimal('0.000000064'),
-    offline_tier_2: new Decimal('0.000001024'),
-    offline_tier_3: new Decimal('0.000016384'),
-    offline_tier_4: new Decimal('0.000262144'),
-    offline_tier_5: new Decimal('0.004194304'),
+  click_tier_1: new Decimal('0.000000064'),
+  click_tier_2: new Decimal('0.000001024'),
+  click_tier_3: new Decimal('0.000016384'),
+  click_tier_4: new Decimal('0.000262144'),
+  click_tier_5: new Decimal('0.004194304'),
+  auto_tier_1: new Decimal('0.000000064'),
+  auto_tier_2: new Decimal('0.000001024'),
+  auto_tier_3: new Decimal('0.000016384'),
+  auto_tier_4: new Decimal('0.000262144'),
+  auto_tier_5: new Decimal('0.004194304'),
+  offline_tier_1: new Decimal('0.000000064'),
+  offline_tier_2: new Decimal('0.000001024'),
+  offline_tier_3: new Decimal('0.000016384'),
+  offline_tier_4: new Decimal('0.000262144'),
+  offline_tier_5: new Decimal('0.004194304'),
 };
 
 const tasksSystem = {
-    dailyTasks: [],
-    achievements: [],
-    lastDailyRefresh: null,
-    dailyTaskTemplates: [
-        { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
-        { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
-        { type: 'upgrades', target: 3, title: 'Upgrade Enthusiast', description: 'Purchase {target} upgrades', reward: '0.000000075' },
-        { type: 'login', target: 1, title: 'Daily Login', description: 'Log in today', reward: '0.000000025' },
-        { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' }
-    ],
-    permanentAchievements: [
-        { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
-        { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
-        { id: 'click_1000', type: 'clicks', target: 1000, title: 'Click Master', description: 'Reach 1,000 total clicks', reward: '0.000000200', completed: false },
-        { id: 'first_upgrade', type: 'upgrades', target: 1, title: 'First Upgrade', description: 'Purchase your first upgrade', reward: '0.000000030', completed: false },
-        { id: 'upgrade_10', type: 'upgrades', target: 10, title: 'Upgrade Collector', description: 'Purchase 10 upgrades', reward: '0.000000150', completed: false },
-        { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
-        { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false }
-    ]
+  dailyTasks: [],
+  achievements: [],
+  lastDailyRefresh: null,
+  dailyTaskTemplates: [
+    { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
+    { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
+    { type: 'upgrades', target: 3, title: 'Upgrade Enthusiast', description: 'Purchase {target} upgrades', reward: '0.000000075' },
+    { type: 'login', target: 1, title: 'Daily Login', description: 'Log in today', reward: '0.000000025' },
+    { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' },
+  ],
+  permanentAchievements: [
+    { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
+    { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
+    { id: 'click_1000', type: 'clicks', target: 1000, title: 'Click Master', description: 'Reach 1,000 total clicks', reward: '0.000000200', completed: false },
+    { id: 'first_upgrade', type: 'upgrades', target: 1, title: 'First Upgrade', description: 'Purchase your first upgrade', reward: '0.000000030', completed: false },
+    { id: 'upgrade_10', type: 'upgrades', target: 10, title: 'Upgrade Collector', description: 'Purchase 10 upgrades', reward: '0.000000150', completed: false },
+    { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
+    { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false },
+  ],
 };
 
 let gameState = {
-    solo: {
-        pot: new Decimal(0),
-        participants: [],
-        endTime: null,
-        isActive: false
-    },
-    team: {
-        teams: [],
-        pot: new Decimal(0),
-        endTime: null,
-        isActive: false
-    },
-    recentWinners: [],
-    yourBets: {
-        solo: new Decimal(0),
-        team: null
-    }
+  solo: {
+    pot: new Decimal(0),
+    participants: [],
+    endTime: null,
+    isActive: false,
+  },
+  team: {
+    teams: [],
+    pot: new Decimal(0),
+    endTime: null,
+    isActive: false,
+  },
+  recentWinners: [],
+  yourBets: {
+    solo: new Decimal(0),
+    team: null,
+  },
 };
 
-/* ---------- Helpers ---------- */
+let lastSoloWinId = null;
 
 function safeDecimal(value) {
-    try {
-        return new Decimal(value || 0);
-    } catch {
-        return new Decimal(0);
-    }
+  try {
+    return new Decimal(value || 0);
+  } catch {
+    return new Decimal(0);
+  }
 }
 
 function parseBet(inputEl) {
-    const raw = (inputEl.value || '0').trim();
-    if (!raw || isNaN(Number(raw))) return new Decimal(0);
-    return new Decimal(raw);
+  const raw = (inputEl.value || '0').trim();
+  if (!raw || isNaN(Number(raw))) return new Decimal(0);
+  return new Decimal(raw);
 }
 
 /* ---------- Tasks / Achievements ---------- */
 
 async function initTasksSystem() {
-    await loadTasksProgress();
-    generateDailyTasks();
-    renderTasksUI();
-    startDailyTimer();
+  await loadTasksProgress();
+  generateDailyTasks();
+  renderTasksUI();
+  startDailyTimer();
 }
 
 function generateDailyTasks() {
-    const today = new Date().toDateString();
-    const lastRefresh = localStorage.getItem('lastDailyRefresh');
+  const today = new Date().toDateString();
+  const lastRefresh = localStorage.getItem('lastDailyRefresh');
 
-    if (lastRefresh !== today) {
-        const shuffled = [...tasksSystem.dailyTaskTemplates].sort(() => 0.5 - Math.random());
-        tasksSystem.dailyTasks = shuffled.slice(0, 5).map((task, index) => ({
-            ...task,
-            id: `daily_${index}`,
-            progress: 0,
-            completed: false,
-            claimed: false
-        }));
+  if (lastRefresh !== today) {
+    const shuffled = [...tasksSystem.dailyTaskTemplates].sort(() => 0.5 - Math.random());
+    tasksSystem.dailyTasks = shuffled.slice(0, 5).map((task, index) => ({
+      ...task,
+      id: `daily_${index}`,
+      progress: 0,
+      completed: false,
+      claimed: false,
+    }));
 
-        localStorage.setItem('lastDailyRefresh', today);
-        localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
-    } else {
-        const savedTasks = localStorage.getItem('dailyTasks');
-        if (savedTasks) {
-            tasksSystem.dailyTasks = JSON.parse(savedTasks);
-        }
+    localStorage.setItem('lastDailyRefresh', today);
+    localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
+  } else {
+    const savedTasks = localStorage.getItem('dailyTasks');
+    if (savedTasks) {
+      tasksSystem.dailyTasks = JSON.parse(savedTasks);
     }
+  }
 }
 
 async function loadTasksProgress() {
-    const savedAchievements = localStorage.getItem('achievementsProgress');
-    if (savedAchievements) {
-        tasksSystem.achievements = JSON.parse(savedAchievements);
-    } else {
-        tasksSystem.achievements = tasksSystem.permanentAchievements.map(ach => ({
-            ...ach,
-            progress: 0,
-            completed: false,
-            claimed: false
-        }));
-    }
+  const savedAchievements = localStorage.getItem('achievementsProgress');
+  if (savedAchievements) {
+    tasksSystem.achievements = JSON.parse(savedAchievements);
+  } else {
+    tasksSystem.achievements = tasksSystem.permanentAchievements.map(ach => ({
+      ...ach,
+      progress: 0,
+      completed: false,
+      claimed: false,
+    }));
+  }
 
-    const stats = JSON.parse(localStorage.getItem('lifetimeStats') || '{}');
-    tasksSystem.lifetimeStats = {
-        totalClicks: stats.totalClicks || 0,
-        totalUpgrades: stats.totalUpgrades || 0,
-        totalScore: stats.totalScore || '0',
-        dailyTasksCompleted: stats.dailyTasksCompleted || 0
-    };
+  const stats = JSON.parse(localStorage.getItem('lifetimeStats') || '{}');
+  tasksSystem.lifetimeStats = {
+    totalClicks: stats.totalClicks || 0,
+    totalUpgrades: stats.totalUpgrades || 0,
+    totalScore: stats.totalScore || '0',
+    dailyTasksCompleted: stats.dailyTasksCompleted || 0,
+  };
 }
 
 function updateTaskProgress(type, amount = 1) {
-    tasksSystem.dailyTasks.forEach(task => {
-        if (!task.completed && task.type === type) {
-            if (type === 'score') {
-                const currentScore = new Decimal(score);
-                const targetScore = new Decimal(task.target);
-                if (currentScore.greaterThanOrEqualTo(targetScore)) {
-                    task.progress = task.target;
-                    task.completed = true;
-                }
-            } else {
-                task.progress += amount;
-                if (task.progress >= task.target) {
-                    task.completed = true;
-                    task.progress = task.target;
-                }
-            }
+  tasksSystem.dailyTasks.forEach(task => {
+    if (!task.completed && task.type === type) {
+      if (type === 'score') {
+        const currentScore = new Decimal(score);
+        const targetScore = new Decimal(task.target);
+        if (currentScore.greaterThanOrEqualTo(targetScore)) {
+          task.progress = task.target;
+          task.completed = true;
         }
-    });
-
-    tasksSystem.achievements.forEach(achievement => {
-        if (!achievement.completed && achievement.type === type) {
-            if (type === 'score') {
-                const currentScore = new Decimal(score);
-                const targetScore = new Decimal(achievement.target);
-                if (currentScore.greaterThanOrEqualTo(targetScore)) {
-                    achievement.progress = achievement.target;
-                    achievement.completed = true;
-                }
-            } else {
-                achievement.progress += amount;
-                if (achievement.progress >= achievement.target) {
-                    achievement.completed = true;
-                    achievement.progress = achievement.target;
-                }
-            }
+      } else {
+        task.progress += amount;
+        if (task.progress >= task.target) {
+          task.completed = true;
+          task.progress = task.target;
         }
-    });
+      }
+    }
+  });
 
-    if (type === 'clicks') {
-        tasksSystem.lifetimeStats.totalClicks += amount;
-    } else if (type === 'upgrades') {
-        tasksSystem.lifetimeStats.totalUpgrades += amount;
+  tasksSystem.achievements.forEach(achievement => {
+    if (!achievement.completed && achievement.type === type) {
+      if (type === 'score') {
+        const currentScore = new Decimal(score);
+        const targetScore = new Decimal(achievement.target);
+        if (currentScore.greaterThanOrEqualTo(targetScore)) {
+          achievement.progress = achievement.target;
+          achievement.completed = true;
+        }
+      } else {
+        achievement.progress += amount;
+        if (achievement.progress >= achievement.target) {
+          achievement.completed = true;
+          achievement.progress = achievement.target;
+        }
+      }
+    }
+  });
+
+  if (type === 'clicks') {
+    tasksSystem.lifetimeStats.totalClicks += amount;
+  } else if (type === 'upgrades') {
+    tasksSystem.lifetimeStats.totalUpgrades += amount;
+  }
+
+  saveTasksProgress();
+  renderTasksUI();
+}
+
+async function claimTaskReward(taskId, isAchievement = false) {
+  const tasks = isAchievement ? tasksSystem.achievements : tasksSystem.dailyTasks;
+  const task = tasks.find(t => t.id === taskId);
+
+  if (!task || !task.completed || task.claimed) return;
+
+  try {
+    const reward = new Decimal(task.reward);
+    score = score.plus(reward);
+    updateUI();
+    task.claimed = true;
+
+    if (!isAchievement) {
+      tasksSystem.lifetimeStats.dailyTasksCompleted += 1;
+      updateTaskProgress('daily_complete', 1);
     }
 
     saveTasksProgress();
     renderTasksUI();
-}
-
-async function claimTaskReward(taskId, isAchievement = false) {
-    const tasks = isAchievement ? tasksSystem.achievements : tasksSystem.dailyTasks;
-    const task = tasks.find(t => t.id === taskId);
-
-    if (!task || !task.completed || task.claimed) return;
-
-    try {
-        const reward = new Decimal(task.reward);
-        score = score.plus(reward);
-        updateUI();
-        task.claimed = true;
-
-        if (!isAchievement) {
-            tasksSystem.lifetimeStats.dailyTasksCompleted += 1;
-            updateTaskProgress('daily_complete', 1);
-        }
-
-        saveTasksProgress();
-        renderTasksUI();
-        tg.HapticFeedback.notificationOccurred('success');
-        showRewardNotification(`+${reward.toFixed(9)} coins!`);
-    } catch (error) {
-        console.error('Failed to claim reward:', error);
-        tg.HapticFeedback.notificationOccurred('error');
-    }
+    tg.HapticFeedback.notificationOccurred('success');
+    showRewardNotification(`+${reward.toFixed(9)} coins!`);
+  } catch (error) {
+    console.error('Failed to claim reward:', error);
+    tg.HapticFeedback.notificationOccurred('error');
+  }
 }
 
 function renderTasksUI() {
-    renderDailyTasks();
-    renderAchievements();
+  renderDailyTasks();
+  renderAchievements();
 }
 
 function renderDailyTasks() {
-    const container = document.getElementById('daily-tasks-list');
-    if (!container) return;
+  const container = document.getElementById('daily-tasks-list');
+  if (!container) return;
 
-    if (tasksSystem.dailyTasks.length === 0) {
-        container.innerHTML = '<p>No daily tasks available.</p>';
-        return;
-    }
+  if (tasksSystem.dailyTasks.length === 0) {
+    container.innerHTML = '<p>No daily tasks available.</p>';
+    return;
+  }
 
-    container.innerHTML = tasksSystem.dailyTasks.map(task => `
+  container.innerHTML = tasksSystem.dailyTasks
+    .map(
+      task => `
         <div class="task-item ${task.completed ? 'task-completed' : ''}">
-            <div class="task-info">
-                <div class="task-title">${task.title}</div>
-                <div class="task-description">${task.description.replace('{target}', task.target)}</div>
-                <div class="task-progress">
-                    Progress: ${task.progress}/${task.target}
-                    ${task.completed ? '<span class="completed-badge"> ✓ Completed</span>' : ''}
-                </div>
-                <div class="task-reward">Reward: ${task.reward} coins</div>
+          <div class="task-info">
+            <div class="task-title">${task.title}</div>
+            <div class="task-description">${task.description.replace('{target}', task.target)}</div>
+            <div class="task-progress">
+              Progress: ${task.progress}/${task.target}
+              ${
+                task.completed
+                  ? '<span class="completed-badge"> ✓ Completed</span>'
+                  : ''
+              }
             </div>
-            <div class="task-action">
-                <button class="claim-btn"
-                    onclick="claimTaskReward('${task.id}', false)"
-                    ${task.completed && !task.claimed ? '' : 'disabled'}>
-                    ${task.claimed ? 'Claimed' : 'Claim'}
-                </button>
-            </div>
+            <div class="task-reward">Reward: ${task.reward} coins</div>
+          </div>
+          <div class="task-action">
+            <button class="claim-btn"
+              onclick="claimTaskReward('${task.id}', false)"
+              ${task.completed && !task.claimed ? '' : 'disabled'}>
+              ${task.claimed ? 'Claimed' : 'Claim'}
+            </button>
+          </div>
         </div>
-    `).join('');
+      `,
+    )
+    .join('');
 }
 
 function renderAchievements() {
-    const container = document.getElementById('achievements-list');
-    if (!container) return;
+  const container = document.getElementById('achievements-list');
+  if (!container) return;
 
-    container.innerHTML = tasksSystem.achievements.map(achievement => `
+  container.innerHTML = tasksSystem.achievements
+    .map(
+      achievement => `
         <div class="achievement-item ${achievement.completed ? 'achievement-completed' : ''}">
-            <div class="task-info">
-                <div class="task-title">${achievement.title}</div>
-                <div class="task-description">${achievement.description}</div>
-                <div class="task-progress">
-                    Progress: ${achievement.progress}/${achievement.target}
-                    ${achievement.completed ? '<span class="completed-badge"> ✓ Completed</span>' : ''}
-                </div>
-                <div class="task-reward">Reward: ${achievement.reward} coins</div>
+          <div class="task-info">
+            <div class="task-title">${achievement.title}</div>
+            <div class="task-description">${achievement.description}</div>
+            <div class="task-progress">
+              Progress: ${achievement.progress}/${achievement.target}
+              ${
+                achievement.completed
+                  ? '<span class="completed-badge"> ✓ Completed</span>'
+                  : ''
+              }
             </div>
-            <div class="task-action">
-                <button class="claim-btn"
-                    onclick="claimTaskReward('${achievement.id}', true)"
-                    ${achievement.completed && !achievement.claimed ? '' : 'disabled'}>
-                    ${achievement.claimed ? 'Claimed' : 'Claim'}
-                </button>
-            </div>
+            <div class="task-reward">Reward: ${achievement.reward} coins</div>
+          </div>
+          <div class="task-action">
+            <button class="claim-btn"
+              onclick="claimTaskReward('${achievement.id}', true)"
+              ${achievement.completed && !achievement.claimed ? '' : 'disabled'}>
+              ${achievement.claimed ? 'Claimed' : 'Claim'}
+            </button>
+          </div>
         </div>
-    `).join('');
+      `,
+    )
+    .join('');
 }
 
 function startDailyTimer() {
-    function updateTimer() {
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+  function updateTimer() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
 
-        const diff = tomorrow - now;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const diff = tomorrow - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        const timerElement = document.getElementById('refresh-timer');
-        if (timerElement) {
-            timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes
-                .toString()
-                .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
+    const timerElement = document.getElementById('refresh-timer');
+    if (timerElement) {
+      timerElement.textContent = `${hours
+        .toString()
+        .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+        .toString()
+        .padStart(2, '0')}`;
     }
+  }
 
-    updateTimer();
-    setInterval(updateTimer, 1000);
+  updateTimer();
+  setInterval(updateTimer, 1000);
 }
 
 function saveTasksProgress() {
-    localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
-    localStorage.setItem('achievementsProgress', JSON.stringify(tasksSystem.achievements));
-    localStorage.setItem('lifetimeStats', JSON.stringify(tasksSystem.lifetimeStats));
+  localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
+  localStorage.setItem('achievementsProgress', JSON.stringify(tasksSystem.achievements));
+  localStorage.setItem('lifetimeStats', JSON.stringify(tasksSystem.lifetimeStats));
 }
 
 function showRewardNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--primary-accent);
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: var(--border-radius);
-        font-weight: 600;
-        z-index: 1000;
-        animation: fadeInOut 2s ease-in-out;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary-accent);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    z-index: 1000;
+    animation: fadeInOut 2s ease-in-out;
+  `;
+  notification.textContent = message;
+  document.body.appendChild(notification);
 
-    setTimeout(() => {
-        document.body.removeChild(notification);
-    }, 2000);
+  setTimeout(() => {
+    document.body.removeChild(notification);
+  }, 2000);
 }
 
 const style = document.createElement('style');
@@ -440,757 +454,484 @@ document.head.appendChild(style);
 /* ---------- API + UI Core ---------- */
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
-    try {
-        const options = { method, headers: { 'Content-Type': 'application/json' } };
-        if (body) options.body = JSON.stringify(body);
-        const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
-            throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`API request to ${endpoint} failed:`, error);
-        throw error;
+  try {
+    const options = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
+      throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
     }
+    return await response.json();
+  } catch (error) {
+    console.error(`API request to ${endpoint} failed:`, error);
+    throw error;
+  }
 }
 
 function showPage(pageId) {
+  if (!pages[pageId] || !navButtons[pageId]) return;
 
-    if (!pages[pageId] || !navButtons[pageId]) return;
+  Object.values(pages).forEach(p => {
+    if (p) p.classList.remove('active');
+  });
 
-    Object.values(pages).forEach(p => {
-        if (p) p.classList.remove('active');
-    });
-
-    pages[pageId].classList.add('active');
-    Object.values(navButtons).forEach(b => {
-        if (b) b.classList.remove('active');
-    });
-    navButtons[pageId].classList.add('active');
+  pages[pageId].classList.add('active');
+  Object.values(navButtons).forEach(b => {
+    if (b) b.classList.remove('active');
+  });
+  navButtons[pageId].classList.add('active');
 }
 
-
 function updateUI() {
-    if (!playerData) return;
-    scoreElement.textContent = score.toFixed(9);
-    perClickElement.textContent = clickValue.toFixed(9);
-    perSecondElement.textContent = autoClickRate.toFixed(9);
+  if (!playerData) return;
+  scoreElement.textContent = score.toFixed(9);
+  perClickElement.textContent = clickValue.toFixed(9);
+  perSecondElement.textContent = autoClickRate.toFixed(9);
 
-    for (const type in upgrades) {
-        for (const id in upgrades[type]) {
-            const level = new Decimal(playerData[`${id}_level`] || 0);
-            const cost = baseCosts[id].times(INTRA_TIER_COST_MULTIPLIER.pow(level));
-            const levelEl = document.getElementById(`${id}_level`);
-            const costEl = document.getElementById(`${id}_cost`);
-            const btnEl = document.getElementById(`${id}_btn`);
-            if (levelEl) levelEl.textContent = level.toString();
-            if (costEl) costEl.textContent = cost.toFixed(9);
-            if (btnEl) btnEl.disabled = score.lessThan(cost);
-        }
+  for (const type in upgrades) {
+    for (const id in upgrades[type]) {
+      const level = new Decimal(playerData[`${id}_level`] || 0);
+      const cost = baseCosts[id].times(INTRA_TIER_COST_MULTIPLIER.pow(level));
+      const levelEl = document.getElementById(`${id}_level`);
+      const costEl = document.getElementById(`${id}_cost`);
+      const btnEl = document.getElementById(`${id}_btn`);
+      if (levelEl) levelEl.textContent = level.toString();
+      if (costEl) costEl.textContent = cost.toFixed(9);
+      if (btnEl) btnEl.disabled = score.lessThan(cost);
     }
+  }
 }
 
 function generateUpgradesHTML() {
-    const containers = {
-        click: document.getElementById('clickUpgrades'),
-        auto: document.getElementById('autoUpgrades'),
-        offline: document.getElementById('offlineUpgrades'),
-    };
-    for (const type in containers) {
-        if (!containers[type]) continue;
-        containers[type].innerHTML = '';
-        for (const id in upgrades[type]) {
-            const upgrade = upgrades[type][id];
-            containers[type].innerHTML += `
-                <div class="upgrade-item" id="${id}">
-                    <div class="upgrade-details">
-                        <h3>${upgrade.name}</h3>
-                        <p>${upgrade.benefit}</p>
-                        <p class="level">Level: <span id="${id}_level">0</span></p>
-                    </div>
-                    <div class="upgrade-action">
-                        <button id="${id}_btn">
-                            Cost: <span class="cost" id="${id}_cost">0</span>
-                        </button>
-                    </div>
-                </div>`;
-        }
+  const containers = {
+    click: document.getElementById('clickUpgrades'),
+    auto: document.getElementById('autoUpgrades'),
+    offline: document.getElementById('offlineUpgrades'),
+  };
+  for (const type in containers) {
+    if (!containers[type]) continue;
+    containers[type].innerHTML = '';
+    for (const id in upgrades[type]) {
+      const upgrade = upgrades[type][id];
+      containers[type].innerHTML += `
+        <div class="upgrade-item" id="${id}">
+          <div class="upgrade-details">
+            <h3>${upgrade.name}</h3>
+            <p>${upgrade.benefit}</p>
+            <p class="level">Level: <span id="${id}_level">0</span></p>
+          </div>
+          <div class="upgrade-action">
+            <button id="${id}_btn">
+              Cost: <span class="cost" id="${id}_cost">0</span>
+            </button>
+          </div>
+        </div>
+      `;
     }
-    for (const type in upgrades) {
-        for (const id in upgrades[type]) {
-            const btn = document.getElementById(`${id}_btn`);
-            if (btn) btn.onclick = () => purchaseUpgrade(id);
-        }
+  }
+  for (const type in upgrades) {
+    for (const id in upgrades[type]) {
+      const btn = document.getElementById(`${id}_btn`);
+      if (btn) btn.onclick = () => purchaseUpgrade(id);
     }
+  }
 }
 
 async function purchaseUpgrade(upgradeId) {
-    const btn = document.getElementById(`${upgradeId}_btn`);
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
+  const btn = document.getElementById(`${upgradeId}_btn`);
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
 
-    updateTaskProgress('upgrades', 1);
+  updateTaskProgress('upgrades', 1);
 
-    try {
-        const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
-        playerData = player;
+  try {
+    const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
+    playerData = player;
 
-        score = new Decimal(playerData.score);
-        clickValue = new Decimal(playerData.click_value);
-        autoClickRate = new Decimal(playerData.auto_click_rate);
-        updateUI();
+    score = new Decimal(playerData.score);
+    clickValue = new Decimal(playerData.click_value);
+    autoClickRate = new Decimal(playerData.auto_click_rate);
+    updateUI();
 
-        tg.HapticFeedback.notificationOccurred('success');
-        btn.innerHTML = 'Success!';
-    } catch (error) {
-        console.error('Upgrade failed:', error);
-        tg.HapticFeedback.notificationOccurred('error');
-        btn.innerHTML = 'Not Enough Coins';
-    } finally {
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            updateUI();
-        }, 1000);
-    }
+    tg.HapticFeedback.notificationOccurred('success');
+    btn.innerHTML = 'Success!';
+  } catch (error) {
+    console.error('Upgrade failed:', error);
+    tg.HapticFeedback.notificationOccurred('error');
+    btn.innerHTML = 'Not Enough Coins';
+  } finally {
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      updateUI();
+    }, 1000);
+  }
 }
 
 /* ---------- Leaderboard ---------- */
 
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
-    const listContainer = document.getElementById('leaderboard-list');
-    listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
+  const listContainer = document.getElementById('leaderboard-list');
+  listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
 
-    try {
-        const players = await apiRequest(`/leaderboard/${sortBy}`);
-        listContainer.innerHTML = '';
+  try {
+    const players = await apiRequest(`/leaderboard/${sortBy}`);
+    listContainer.innerHTML = '';
 
-        if (players.length === 0) {
-            listContainer.innerHTML = '<p style="text-align: center;">The leaderboard is empty!</p>';
-            return;
-        }
-
-        players.forEach((player, index) => {
-            const rank = index + 1;
-            const item = document.createElement('div');
-            item.className = 'leaderboard-item';
-
-            let pfpElement;
-            if (player.profile_photo_url) {
-                pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
-            } else {
-                const initial = player.username ? player.username.charAt(0).toUpperCase() : '?';
-                const color = getColorForUser(player.username || '');
-                pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
-            }
-
-            let displayValue;
-            switch (sortBy) {
-                case 'click_value':
-                    displayValue = `${new Decimal(player.click_value).toFixed(9)}`;
-                    break;
-                case 'auto_click_rate':
-                    displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)}`;
-                    break;
-                default:
-                    displayValue = `${new Decimal(player.score).toFixed(9)}`;
-            }
-
-            item.innerHTML = `
-                <div class="rank rank-${rank}">${rank}</div>
-                ${pfpElement}
-                <div class="user-details">
-                    <div class="username">${player.username || 'Anonymous'}</div>
-                </div>
-                <div class="score-value">${displayValue}</div>
-            `;
-            listContainer.appendChild(item);
-        });
-    } catch (error) {
-        listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard.</p>`;
-        console.error('Failed to load leaderboard:', error);
+    if (players.length === 0) {
+      listContainer.innerHTML = '<p style="text-align: center;">The leaderboard is empty!</p>';
+      return;
     }
+
+    players.forEach((player, index) => {
+      const rank = index + 1;
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+
+      let pfpElement;
+      if (player.profile_photo_url) {
+        pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
+      } else {
+        const initial = player.username ? player.username.charAt(0).toUpperCase() : '?';
+        const color = getColorForUser(player.username || '');
+        pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
+      }
+
+      let displayValue;
+      switch (sortBy) {
+        case 'click_value':
+          displayValue = `${new Decimal(player.click_value).toFixed(9)}`;
+          break;
+        case 'auto_click_rate':
+          displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)}`;
+          break;
+        default:
+          displayValue = `${new Decimal(player.score).toFixed(9)}`;
+      }
+
+      item.innerHTML = `
+        <div class="rank rank-${rank}">${rank}</div>
+        ${pfpElement}
+        <div class="user-details">
+          <div class="username">${player.username || 'Anonymous'}</div>
+        </div>
+        <div class="score-value">${displayValue}</div>
+      `;
+      listContainer.appendChild(item);
+    });
+  } catch (error) {
+    listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard.</p>`;
+    console.error('Failed to load leaderboard:', error);
+  }
 }
 
 const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
 
 function getColorForUser(username = '') {
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash % userColors.length);
-    return userColors[index];
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash % userColors.length);
+  return userColors[index];
 }
 
 /* ---------- Wallet ---------- */
 
 async function handleSendCoins() {
-    const sendBtn = document.getElementById('send-btn');
-    const statusEl = document.getElementById('transfer-status');
-    const receiverUsername = document.getElementById('receiverUsername').value;
-    const amount = document.getElementById('transferAmount').value;
+  const sendBtn = document.getElementById('send-btn');
+  const statusEl = document.getElementById('transfer-status');
+  const receiverUsername = document.getElementById('receiverUsername').value;
+  const amount = document.getElementById('transferAmount').value;
 
-    if (!receiverUsername || !amount) {
-        statusEl.textContent = 'Please fill in both fields.';
-        statusEl.className = 'status-message error';
-        return;
+  if (!receiverUsername || !amount) {
+    statusEl.textContent = 'Please fill in both fields.';
+    statusEl.className = 'status-message error';
+    return;
+  }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+  statusEl.textContent = '';
+
+  try {
+    const result = await apiRequest('/wallet/transfer', 'POST', {
+      senderId: userId,
+      receiverUsername,
+      amount,
+    });
+
+    if (result.success) {
+      statusEl.textContent = 'Transfer successful!';
+      statusEl.className = 'status-message success';
+
+      playerData = await apiRequest(`/player/${userId}`);
+      score = new Decimal(playerData.score);
+      updateUI();
+      fetchTransactionHistory();
     }
-
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending...';
-    statusEl.textContent = '';
-
-    try {
-        const result = await apiRequest('/wallet/transfer', 'POST', {
-            senderId: userId,
-            receiverUsername,
-            amount
-        });
-
-        if (result.success) {
-            statusEl.textContent = 'Transfer successful!';
-            statusEl.className = 'status-message success';
-
-            playerData = await apiRequest(`/player/${userId}`);
-            score = new Decimal(playerData.score);
-            updateUI();
-            fetchTransactionHistory();
-        }
-    } catch (error) {
-        statusEl.textContent = `Error: ${error.message}`;
-        statusEl.className = 'status-message error';
-    } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send';
-        setTimeout(() => {
-            document.getElementById('receiverUsername').value = '';
-            document.getElementById('transferAmount').value = '';
-        }, 2000);
-    }
+  } catch (error) {
+    statusEl.textContent = `Error: ${error.message}`;
+    statusEl.className = 'status-message error';
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+    setTimeout(() => {
+      document.getElementById('receiverUsername').value = '';
+      document.getElementById('transferAmount').value = '';
+    }, 2000);
+  }
 }
 
 function setupTransactionSearch() {
-    const searchInput = document.getElementById('transaction-search');
-    if (!searchInput) return;
-    searchInput.addEventListener('input', filterTransactions);
+  const searchInput = document.getElementById('transaction-search');
+  if (!searchInput) return;
+  searchInput.addEventListener('input', filterTransactions);
 }
 
 function filterTransactions() {
-    const searchTerm = document.getElementById('transaction-search').value.toLowerCase();
-    const transactionItems = document.querySelectorAll('.transaction-item');
+  const searchTerm = document.getElementById('transaction-search').value.toLowerCase();
+  const transactionItems = document.querySelectorAll('.transaction-item');
 
-    transactionItems.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        if (text.includes(searchTerm)) {
-            item.classList.remove('hidden');
-        } else {
-            item.classList.add('hidden');
-        }
-    });
+  transactionItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    if (text.includes(searchTerm)) {
+      item.classList.remove('hidden');
+    } else {
+      item.classList.add('hidden');
+    }
+  });
 }
 
 async function fetchTransactionHistory() {
-    const historyList = document.getElementById('transaction-history-list');
-    historyList.innerHTML = '<p>Loading history...</p>';
+  const historyList = document.getElementById('transaction-history-list');
+  historyList.innerHTML = '<p>Loading history...</p>';
 
-    try {
-        const history = await apiRequest(`/wallet/history/${userId}`);
-        if (!history || history.length === 0) {
-            historyList.innerHTML = '<p>No transactions yet.</p>';
-            return;
-        }
-
-        historyList.innerHTML = history.map(tx => {
-            const isSent = tx.type === 'sent';
-            const txDetails = isSent
-                ? `Sent to @${tx.receiver_username}`
-                : `Received from User ID ${tx.sender_id}`;
-
-            const amountClass = isSent ? 'tx-amount sent' : 'tx-amount received';
-            const amountSign = isSent ? '-' : '+';
-            const amount = new Decimal(tx.amount).toFixed(9);
-
-            return `
-                <div class="transaction-item" data-amount="${amount}" data-type="${isSent ? 'sent' : 'received'}" data-date="${tx.created_at}">
-                    <div class="tx-details">
-                        <span class="tx-type">${txDetails}</span>
-                        <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
-                    </div>
-                    <div class="${amountClass}">${amountSign}${amount}</div>
-                </div>
-            `;
-        }).join('');
-
-    } catch (error) {
-        historyList.innerHTML = '<p class="error">Could not load history.</p>';
+  try {
+    const history = await apiRequest(`/wallet/history/${userId}`);
+    if (!history || history.length === 0) {
+      historyList.innerHTML = '<p>No transactions yet.</p>';
+      return;
     }
+
+    historyList.innerHTML = history
+      .map(tx => {
+        const isSent = tx.type === 'sent';
+        const txDetails = isSent
+          ? `Sent to @${tx.receiver_username}`
+          : `Received from User ID ${tx.sender_id}`;
+
+        const amountClass = isSent ? 'tx-amount sent' : 'tx-amount received';
+        const amountSign = isSent ? '-' : '+';
+        const amount = new Decimal(tx.amount).toFixed(9);
+
+        return `
+          <div class="transaction-item" data-amount="${amount}" data-type="${isSent ? 'sent' : 'received'}" data-date="${tx.created_at}">
+            <div class="tx-details">
+              <span class="tx-type">${txDetails}</span>
+              <span class="tx-date">${new Date(tx.created_at).toLocaleString()}</span>
+            </div>
+            <div class="${amountClass}">${amountSign}${amount}</div>
+          </div>
+        `;
+      })
+      .join('');
+  } catch (error) {
+    historyList.innerHTML = '<p class="error">Could not load history.</p>';
+  }
 }
 
-/* ---------- Passive loop ---------- */
-
-function gameLoop() {
-    requestAnimationFrame(gameLoop);
-    const now = Date.now();
-    const delta = (now - lastFrameTime) / 1000;
-    lastFrameTime = now;
-
-    if (playerData) {
-        const passiveIncome = autoClickRate.times(delta);
-        score = score.plus(passiveIncome);
-        updateUI();
-    }
-}
-
-/* ---------- Telegram profile ---------- */
-
-function getTWAUser() {
-    const u = tg?.initDataUnsafe?.user;
-    if (!u) return null;
-    return {
-        user_id: u.id,
-        username: u.username ?? null,
-        first_name: u.first_name ?? null,
-        last_name: u.last_name ?? null,
-        language_code: u.language_code ?? null,
-        photo_url: u.photo_url ?? null,
-    };
-}
-
-async function syncProfile() {
-    const info = getTWAUser();
-    if (!info) return;
-    try {
-        await apiRequest('/player/syncProfile', 'POST', info);
-    } catch (e) {
-        console.warn('Profile sync failed:', e?.message || e);
-    }
-}
-
-/* ---------- Games (solo + team lottery) ---------- */
+/* ---------- Games (solo + team) ---------- */
 
 async function initGames() {
-    await loadGameState();
-    setupGameEventListeners();
-    startGameTimers();
-    updateGamesUI();
+  await loadGameState();
+  setupGameEventListeners();
+  startGameTimers();
+  updateGamesUI();
 }
 
 async function loadGameState() {
-    try {
-        const state = await apiRequest(`/games/state/${userId}`);
-        if (state) {
-            gameState = {
-                solo: {
-                    pot: new Decimal(state.solo.pot || 0),
-                    participants: state.solo.participants || [],
-                    endTime: state.solo.endTime ? new Date(state.solo.endTime) : null,
-                    isActive: state.solo.isActive || false
-                },
-                team: {
-                    teams: state.team.teams || [],
-                    pot: new Decimal(state.team.pot || 0),
-                    endTime: state.team.endTime ? new Date(state.team.endTime) : null,
-                    isActive: state.team.isActive || false
-                },
-                recentWinners: state.recentWinners || [],
-                yourBets: {
-                    solo: new Decimal(state.yourBets?.solo || 0),
-                    team: state.yourBets?.team || null
-                }
-            };
-        }
-    } catch (error) {
-        console.error('Failed to load game state:', error);
+  try {
+    const state = await apiRequest(`/games/state/${userId}`);
+    if (state) applyGameStateFromServer(state);
+  } catch (error) {
+    console.error('Failed to load game state:', error);
+  }
+}
 
-        gameState = {
-            solo: {
-                pot: new Decimal(0),
-                participants: [],
-                endTime: new Date(Date.now() + SOLO_LOTTERY_DURATION),
-                isActive: true
-            },
-            team: {
-                teams: [],
-                pot: new Decimal(0),
-                endTime: new Date(Date.now() + TEAM_LOTTERY_DURATION),
-                isActive: true
-            },
-            recentWinners: [],
-            yourBets: {
-                solo: new Decimal(0),
-                team: null
-            }
-        };
+function applyGameStateFromServer(state) {
+  gameState = {
+    solo: {
+      pot: new Decimal(state.solo?.pot || 0),
+      participants: state.solo?.participants || [],
+      endTime: state.solo?.endTime ? new Date(state.solo.endTime) : null,
+      isActive: !!state.solo?.isActive,
+    },
+    team: {
+      teams: state.team?.teams || [],
+      pot: new Decimal(state.team?.pot || 0),
+      endTime: state.team?.endTime ? new Date(state.team.endTime) : null,
+      isActive: !!state.team?.isActive,
+    },
+    recentWinners: state.recentWinners || [],
+    yourBets: {
+      solo: new Decimal(state.yourBets?.solo || 0),
+      team: state.yourBets?.team || null,
+    },
+  };
+
+  const latest = gameState.recentWinners[0];
+  if (latest && latest.game === 'solo') {
+    const winId = `${latest.date}:${latest.username}:${latest.amount}`;
+    if (latest.username === userName && winId !== lastSoloWinId) {
+      lastSoloWinId = winId;
+      showGameModal('YOU WON!', `${latest.amount} coins!`, '🎉');
+      tg.HapticFeedback.notificationOccurred('success');
     }
+  }
+
+  updateGamesUI();
 }
 
-async function startNewSoloGame() {
-    gameState.solo = {
-        pot: new Decimal(0),
-        participants: [],
-        endTime: new Date(Date.now() + SOLO_LOTTERY_DURATION),
-        isActive: true
-    };
-    await saveGameState();
+async function refreshGameState() {
+  try {
+    const state = await apiRequest(`/games/state/${userId}`);
+    if (state) applyGameStateFromServer(state);
+  } catch (e) {
+    console.error('refreshGameState failed', e);
+  }
 }
 
-async function startNewTeamGame() {
-    gameState.team = {
-        teams: [],
-        pot: new Decimal(0),
-        endTime: new Date(Date.now() + TEAM_LOTTERY_DURATION),
-        isActive: true
-    };
-    await saveGameState();
+function startGameTimers() {
+  updateTimers();
+  setInterval(updateTimers, 1000);
+  setInterval(refreshGameState, 5000);
 }
 
-async function saveGameState() {
-    try {
-        await apiRequest('/games/save', 'POST', {
-            userId,
-            gameState: {
-                solo: {
-                    pot: gameState.solo.pot.toFixed(9),
-                    participants: gameState.solo.participants,
-                    endTime: gameState.solo.endTime,
-                    isActive: gameState.solo.isActive
-                },
-                team: {
-                    teams: gameState.team.teams,
-                    pot: gameState.team.pot.toFixed(9),
-                    endTime: gameState.team.endTime,
-                    isActive: gameState.team.isActive
-                },
-                recentWinners: gameState.recentWinners,
-                yourBets: {
-                    solo: gameState.yourBets.solo.toFixed(9),
-                    team: gameState.yourBets.team
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Failed to save game state:', error);
+function updateTimers() {
+  const now = new Date();
+
+  const soloTimerEl = document.getElementById('solo-timer');
+  if (gameState.solo.endTime && gameState.solo.isActive) {
+    const soloTimeLeft = Math.max(0, gameState.solo.endTime - now);
+    const soloMinutes = Math.floor(soloTimeLeft / 60000);
+    const soloSeconds = Math.floor((soloTimeLeft % 60000) / 1000);
+    if (soloTimerEl) {
+      soloTimerEl.textContent =
+        soloMinutes.toString().padStart(2, '0') +
+        ':' +
+        soloSeconds.toString().padStart(2, '0');
     }
+  } else if (soloTimerEl) {
+    soloTimerEl.textContent = '--:--';
+  }
+
+  const teamTimerEl = document.getElementById('team-timer');
+  if (gameState.team.endTime && gameState.team.isActive) {
+    const teamTimeLeft = Math.max(0, gameState.team.endTime - now);
+    const teamMinutes = Math.floor(teamTimeLeft / 60000);
+    const teamSeconds = Math.floor((teamTimeLeft % 60000) / 1000);
+    if (teamTimerEl) {
+      teamTimerEl.textContent =
+        teamMinutes.toString().padStart(2, '0') +
+        ':' +
+        teamSeconds.toString().padStart(2, '0');
+    }
+  } else if (teamTimerEl) {
+    teamTimerEl.textContent = '--:--';
+  }
 }
 
 async function joinSoloLottery() {
-    const betAmountInput = document.getElementById('solo-bet-amount');
-    const betAmount = parseBet(betAmountInput);
+  const betAmountInput = document.getElementById('solo-bet-amount');
+  const betAmount = parseBet(betAmountInput);
+  if (betAmount.isZero() || betAmount.isNegative()) {
+    showGameNotification('Please enter a valid bet amount', 'error');
+    return;
+  }
 
-    if (betAmount.isZero() || betAmount.isNegative()) {
-        showGameNotification('Please enter a valid bet amount', 'error');
-        return;
+  try {
+    const result = await apiRequest('/games/join-solo', 'POST', {
+      userId,
+      betAmount: betAmount.toFixed(9),
+    });
+    if (!result.success) {
+      showGameNotification(result.error || 'Failed to join', 'error');
+      return;
     }
-
-    if (score.lessThan(betAmount)) {
-        showGameNotification('Insufficient funds', 'error');
-        return;
-    }
-
-    try {
-        score = score.minus(betAmount);
-
-        const actualBet = betAmount.times(1 - HOUSE_FEE);
-        const fee = betAmount.minus(actualBet);
-
-        gameState.solo.pot = gameState.solo.pot.plus(actualBet);
-
-        const existingIndex = gameState.solo.participants.findIndex(p => p.userId === userId);
-        if (existingIndex >= 0) {
-            const prev = safeDecimal(gameState.solo.participants[existingIndex].bet);
-            const newBet = prev.plus(actualBet);
-            gameState.solo.participants[existingIndex].bet = newBet.toFixed(9);
-        } else {
-            gameState.solo.participants.push({
-                userId,
-                username: userName,
-                bet: actualBet.toFixed(9),
-                percentage: 0
-            });
-        }
-
-        const prevYourBet = safeDecimal(gameState.yourBets.solo);
-        gameState.yourBets.solo = prevYourBet.plus(actualBet);
-
-        await saveGameState();
-
-        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-
-        updateUI();
-        updateGamesUI();
-
-        showGameNotification(`Joined solo lottery with ${actualBet.toFixed(9)} coins (1% fee applied)`, 'success');
-        tg.HapticFeedback.notificationOccurred('success');
-
-    } catch (error) {
-        console.error('Failed to join solo lottery:', error);
-        showGameNotification('Failed to join lottery', 'error');
-        tg.HapticFeedback.notificationOccurred('error');
-    }
+    score = new Decimal(result.newBalance);
+    playerData.score = score.toFixed(9);
+    applyGameStateFromServer(result.state);
+    updateUI();
+    showGameNotification('Joined solo lottery', 'success');
+  } catch (error) {
+    console.error('joinSoloLottery failed', error);
+    showGameNotification('Failed to join lottery', 'error');
+  }
 }
 
 async function joinTeamLottery(teamId) {
-    const betAmountInput = document.getElementById('team-bet-amount');
-    const betAmount = parseBet(betAmountInput);
+  const betAmountInput = document.getElementById('team-bet-amount');
+  const betAmount = parseBet(betAmountInput);
+  if (betAmount.isZero() || betAmount.isNegative()) {
+    showGameNotification('Please enter a valid bet amount', 'error');
+    return;
+  }
 
-    if (betAmount.isZero() || betAmount.isNegative()) {
-        showGameNotification('Please enter a valid bet amount', 'error');
-        return;
+  try {
+    const result = await apiRequest('/games/team/join', 'POST', {
+      userId,
+      teamId,
+      betAmount: betAmount.toFixed(9),
+    });
+    if (!result.success) {
+      showGameNotification(result.error || 'Failed to join team', 'error');
+      return;
     }
-
-    if (score.lessThan(betAmount)) {
-        showGameNotification('Insufficient funds', 'error');
-        return;
-    }
-
-    const team = gameState.team.teams.find(t => t.id === teamId);
-    if (!team) {
-        showGameNotification('Team not found', 'error');
-        return;
-    }
-
-    if (team.members.length >= 10) {
-        showGameNotification('Team is full', 'error');
-        return;
-    }
-
-    if (gameState.yourBets.team && gameState.yourBets.team !== teamId) {
-        showGameNotification('You are already in another team', 'error');
-        return;
-    }
-
-    try {
-        score = score.minus(betAmount);
-
-        const actualBet = betAmount.times(1 - HOUSE_FEE);
-        const fee = betAmount.minus(actualBet);
-
-        const memberIndex = team.members.findIndex(m => m.userId === userId);
-        if (memberIndex >= 0) {
-            const prev = safeDecimal(team.members[memberIndex].bet);
-            team.members[memberIndex].bet = prev.plus(actualBet).toFixed(9);
-        } else {
-            team.members.push({
-                userId,
-                username: userName,
-                bet: actualBet.toFixed(9)
-            });
-        }
-
-        const total = team.members.reduce(
-            (sum, member) => sum.plus(safeDecimal(member.bet)),
-            new Decimal(0)
-        );
-        team.total = total.toFixed(9);
-
-        gameState.team.pot = gameState.team.pot.plus(actualBet);
-        gameState.yourBets.team = teamId;
-
-        await saveGameState();
-
-        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-
-        updateUI();
-        updateGamesUI();
-
-        showGameNotification(`Joined team "${team.name}" with ${actualBet.toFixed(9)} coins`, 'success');
-        tg.HapticFeedback.notificationOccurred('success');
-
-    } catch (error) {
-        console.error('Failed to join team lottery:', error);
-        showGameNotification('Failed to join team', 'error');
-        tg.HapticFeedback.notificationOccurred('error');
-    }
+    score = new Decimal(result.newBalance);
+    playerData.score = score.toFixed(9);
+    applyGameStateFromServer(result.state);
+    updateUI();
+    showGameNotification('Joined team', 'success');
+  } catch (error) {
+    console.error('joinTeamLottery failed', error);
+    showGameNotification('Failed to join team', 'error');
+  }
 }
 
 async function createNewTeam() {
-    const betAmountInput = document.getElementById('team-bet-amount');
-    const betAmount = parseBet(betAmountInput);
+  const betAmountInput = document.getElementById('team-bet-amount');
+  const betAmount = parseBet(betAmountInput);
+  if (betAmount.isZero() || betAmount.isNegative()) {
+    showGameNotification('Please enter a valid bet amount', 'error');
+    return;
+  }
 
-    if (betAmount.isZero() || betAmount.isNegative()) {
-        showGameNotification('Please enter a valid bet amount', 'error');
-        return;
-    }
+  const teamName = prompt('Enter team name (max 20 characters):');
+  if (!teamName || teamName.trim().length === 0 || teamName.length > 20) {
+    showGameNotification('Invalid team name', 'error');
+    return;
+  }
 
-    if (score.lessThan(betAmount)) {
-        showGameNotification('Insufficient funds', 'error');
-        return;
-    }
-
-    const teamName = prompt('Enter team name (max 20 characters):');
-    if (!teamName || teamName.trim().length === 0 || teamName.length > 20) {
-        showGameNotification('Invalid team name', 'error');
-        return;
-    }
-
-    try {
-        score = score.minus(betAmount);
-
-        const actualBet = betAmount.times(1 - HOUSE_FEE);
-        const fee = betAmount.minus(actualBet);
-
-        const teamId = Date.now().toString();
-        const newTeam = {
-            id: teamId,
-            name: teamName.trim(),
-            total: actualBet.toFixed(9),
-            members: [{
-                userId,
-                username: userName,
-                bet: actualBet.toFixed(9)
-            }],
-            creatorId: userId
-        };
-
-        gameState.team.teams.push(newTeam);
-        gameState.team.pot = gameState.team.pot.plus(actualBet);
-        gameState.yourBets.team = teamId;
-
-        await saveGameState();
-
-        await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-
-        updateUI();
-        updateGamesUI();
-
-        showGameNotification(`Created team "${teamName}" with ${actualBet.toFixed(9)} coins`, 'success');
-        tg.HapticFeedback.notificationOccurred('success');
-
-    } catch (error) {
-        console.error('Failed to create team:', error);
-        showGameNotification('Failed to create team', 'error');
-        tg.HapticFeedback.notificationOccurred('error');
-    }
-}
-
-async function drawSoloWinner() {
-    if (gameState.solo.participants.length === 0) {
-        await startNewSoloGame();
-        return;
-    }
-
-    const totalPot = gameState.solo.pot;
-    gameState.solo.participants.forEach(participant => {
-        participant.percentage = new Decimal(participant.bet)
-            .dividedBy(totalPot)
-            .times(100)
-            .toDecimalPlaces(2)
-            .toNumber();
+  try {
+    const result = await apiRequest('/games/team/create', 'POST', {
+      userId,
+      teamName: teamName.trim(),
+      betAmount: betAmount.toFixed(9),
     });
-
-    let random = Math.random() * 100;
-    let winner = null;
-
-    for (const participant of gameState.solo.participants) {
-        if (random <= participant.percentage) {
-            winner = participant;
-            break;
-        }
-        random -= participant.percentage;
+    if (!result.success) {
+      showGameNotification(result.error || 'Failed to create team', 'error');
+      return;
     }
-
-    if (!winner) {
-        winner = gameState.solo.participants[Math.floor(Math.random() * gameState.solo.participants.length)];
-    }
-
-    const prize = totalPot;
-
-    try {
-        await apiRequest('/player/add-coins', 'POST', {
-            userId: winner.userId,
-            amount: prize.toFixed(9)
-        });
-
-        gameState.recentWinners.unshift({
-            game: 'solo',
-            username: winner.username,
-            amount: prize.toFixed(9),
-            date: new Date().toISOString()
-        });
-
-        if (gameState.recentWinners.length > 10) {
-            gameState.recentWinners = gameState.recentWinners.slice(0, 10);
-        }
-
-        if (winner.userId === userId) {
-            showGameModal(`🎉 YOU WON!`, `${prize.toFixed(9)} coins!`, '💰');
-            tg.HapticFeedback.notificationOccurred('success');
-        }
-
-        await startNewSoloGame();
-        updateGamesUI();
-
-    } catch (error) {
-        console.error('Failed to award solo prize:', error);
-    }
-}
-
-async function drawTeamWinner() {
-    if (gameState.team.teams.length === 0) {
-        await startNewTeamGame();
-        return;
-    }
-
-    const teamTotals = gameState.team.teams.map(team => ({
-        team,
-        total: new Decimal(team.total)
-    }));
-
-    const totalPot = gameState.team.pot;
-    let random = Math.random() * 100;
-    let winningTeam = null;
-    let accumulated = 0;
-
-    for (const teamData of teamTotals) {
-        const percentage = teamData.total.dividedBy(totalPot).times(100);
-        accumulated += percentage.toNumber();
-        if (random <= accumulated) {
-            winningTeam = teamData.team;
-            break;
-        }
-    }
-
-    if (!winningTeam) {
-        winningTeam = gameState.team.teams[Math.floor(Math.random() * gameState.team.teams.length)];
-    }
-
-    const prize = totalPot;
-
-    try {
-        for (const member of winningTeam.members) {
-            const share = new Decimal(member.bet).dividedBy(new Decimal(winningTeam.total)).times(prize);
-
-            await apiRequest('/player/add-coins', 'POST', {
-                userId: member.userId,
-                amount: share.toFixed(9)
-            });
-
-            if (member.userId === userId) {
-                showGameModal(`🏆 TEAM WIN!`, `${share.toFixed(9)} coins!`, '👥');
-                tg.HapticFeedback.notificationOccurred('success');
-            }
-
-            if (member.userId === winningTeam.creatorId) {
-                gameState.recentWinners.unshift({
-                    game: 'team',
-                    username: `${member.username} (Team: ${winningTeam.name})`,
-                    amount: share.toFixed(9),
-                    date: new Date().toISOString()
-                });
-            }
-        }
-
-        if (gameState.recentWinners.length > 10) {
-            gameState.recentWinners = gameState.recentWinners.slice(0, 10);
-        }
-
-        await startNewTeamGame();
-        updateGamesUI();
-
-    } catch (error) {
-        console.error('Failed to award team prize:', error);
-    }
+    score = new Decimal(result.newBalance);
+    playerData.score = score.toFixed(9);
+    applyGameStateFromServer(result.state);
+    updateUI();
+    showGameNotification(`Created team "${teamName.trim()}"`, 'success');
+  } catch (error) {
+    console.error('createNewTeam failed', error);
+    showGameNotification('Failed to create team', 'error');
+  }
 }
 
 function updateGamesUI() {
@@ -1201,12 +942,7 @@ function updateGamesUI() {
   if (soloPotEl) soloPotEl.textContent = gameState.solo.pot.toFixed(9);
 
   const yourSoloBetEl = document.getElementById('your-solo-bet');
-  if (yourSoloBetEl) {
-    yourSoloBetEl.textContent =
-      typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed
-        ? gameState.yourBets.solo.toFixed(9)
-        : safeDecimal(gameState.yourBets.solo).toFixed(9);
-  }
+  if (yourSoloBetEl) yourSoloBetEl.textContent = gameState.yourBets.solo.toFixed(9);
 
   const soloCountEl = document.getElementById('solo-participants-count');
   if (soloCountEl) soloCountEl.textContent = gameState.solo.participants.length;
@@ -1214,35 +950,30 @@ function updateGamesUI() {
   const soloParticipantsContainer = document.getElementById('solo-participants');
   if (soloParticipantsContainer) {
     soloParticipantsContainer.innerHTML = gameState.solo.participants
-      .sort((a, b) => {
-        const betA = safeDecimal(a.bet);
-        const betB = safeDecimal(b.bet);
-        return betB.minus(betA).toNumber();
-      })
+      .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
       .map(p => {
         const bet = safeDecimal(p.bet);
         return `
           <div class="participant-item">
             <span class="participant-name">${p.username || 'Anonymous'}</span>
-            <span class="participant-bet">${bet.toFixed(9)} (${p.percentage || 0}%)</span>
+            <span class="participant-bet">${bet.toFixed(9)}</span>
           </div>
         `;
-      }).join('');
+      })
+      .join('');
   }
 
   const teamPotEl = document.getElementById('team-pot');
   if (teamPotEl) teamPotEl.textContent = gameState.team.pot.toFixed(9);
 
+  const yourTeamBetEl = document.getElementById('your-team-bet');
   const teamBetText = gameState.yourBets.team
     ? (() => {
         const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
         if (!team) return '0';
-        const total = safeDecimal(team.total);
-        return total.toFixed(9);
+        return safeDecimal(team.total).toFixed(9);
       })()
     : '0';
-
-  const yourTeamBetEl = document.getElementById('your-team-bet');
   if (yourTeamBetEl) yourTeamBetEl.textContent = teamBetText;
 
   const activeTeamsEl = document.getElementById('active-teams-count');
@@ -1251,106 +982,47 @@ function updateGamesUI() {
   const teamsContainer = document.getElementById('teams-container');
   if (teamsContainer) {
     teamsContainer.innerHTML = gameState.team.teams
-      .sort((a, b) => {
-        const totalA = safeDecimal(a.total);
-        const totalB = safeDecimal(b.total);
-        return totalB.minus(totalA).toNumber();
-      })
+      .sort((a, b) => safeDecimal(b.total).minus(safeDecimal(a.total)).toNumber())
       .map(team => {
         const total = safeDecimal(team.total);
+        const memberCount = (team.members || []).length;
         return `
           <div class="team-item" data-team-id="${team.id}">
             <div>
               <div class="team-name">${team.name || 'Unnamed Team'}</div>
-              <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                ${team.members?.length || 0}/10 members
-              </div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${memberCount}/10 members</div>
             </div>
             <span class="team-total">${total.toFixed(9)}</span>
           </div>
         `;
-      }).join('');
+      })
+      .join('');
   }
-
 
   const winnersContainer = document.getElementById('solo-winners-list');
   if (winnersContainer) {
-    winnersContainer.innerHTML = gameState.recentWinners.map(w => {
-      const dateStr = new Date(w.date || Date.now()).toLocaleString();
-      const putText = w.bet ? safeDecimal(w.bet).toFixed(9) : '—';
-      const winText = safeDecimal(w.amount || 0).toFixed(9);
-      const rateText = w.winRate != null ? `${w.winRate.toFixed(2)}%` : '';
-
-      return `
-        <div class="winner-message">
-          <div class="winner-header">
-            <span class="winner-name">${w.username || 'Anonymous'}</span>
-            <span class="winner-time">${dateStr}</span>
+    winnersContainer.innerHTML = gameState.recentWinners
+      .map(w => {
+        const dateStr = new Date(w.date).toLocaleString();
+        return `
+          <div class="winner-item">
+            <div>
+              <div class="winner-name">${w.username || 'Anonymous'}</div>
+              <div class="winner-date">${dateStr}</div>
+            </div>
+            <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
           </div>
-          <div class="winner-body">
-            Put: <strong>${putText}</strong><br>
-            Won: <strong>${winText}</strong>${rateText ? ` • Win rate: <strong>${rateText}</strong>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      })
+      .join('');
   }
-
-
-  const topList = document.getElementById('solo-top-list');
-  if (topList) {
-    const sortedTop = [...gameState.recentWinners].sort((a, b) =>
-      safeDecimal(b.amount).minus(safeDecimal(a.amount)).toNumber()
-    );
-    topList.innerHTML = sortedTop.map(w => `
-      <div class="top-item">
-        <div class="top-user">${w.username || 'Anonymous'}</div>
-        <div class="top-amount">${safeDecimal(w.amount).toFixed(9)}</div>
-      </div>
-    `).join('');
-  }
-}
-
-
-function startGameTimers() {
-    updateTimers();
-    setInterval(updateTimers, 1000);
-}
-
-function updateTimers() {
-    const now = new Date();
-
-    if (gameState.solo.endTime && gameState.solo.isActive) {
-        const soloTimeLeft = Math.max(0, gameState.solo.endTime - now);
-        if (soloTimeLeft <= 0) {
-            drawSoloWinner();
-        } else {
-            const soloMinutes = Math.floor(soloTimeLeft / 60000);
-            const soloSeconds = Math.floor((soloTimeLeft % 60000) / 1000);
-            document.getElementById('solo-timer').textContent =
-                `${soloMinutes.toString().padStart(2, '0')}:${soloSeconds.toString().padStart(2, '0')}`;
-        }
-    }
-
-    if (gameState.team.endTime && gameState.team.isActive) {
-        const teamTimeLeft = Math.max(0, gameState.team.endTime - now);
-        if (teamTimeLeft <= 0) {
-            drawTeamWinner();
-        } else {
-            const teamMinutes = Math.floor(teamTimeLeft / 60000);
-            const teamSeconds = Math.floor((teamTimeLeft % 60000) / 1000);
-            document.getElementById('team-timer').textContent =
-                `${teamMinutes.toString().padStart(2, '0')}:${teamSeconds.toString().padStart(2, '0')}`;
-        }
-    }
 }
 
 function setupGameEventListeners() {
-
   document.querySelectorAll('.quick-bet-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', e => {
       const multiplier = parseFloat(e.target.dataset.multiplier);
-      const input = e.target.closest('.bet-amount-input')?.querySelector('input[type="number"]');
+      const input = e.target.closest('.bet-amount-input')?.querySelector('input[type=number]');
       if (!input || isNaN(multiplier)) return;
       const currentValue = safeDecimal(input.value);
       const newValue = currentValue.times(multiplier);
@@ -1358,58 +1030,44 @@ function setupGameEventListeners() {
     });
   });
 
-
   document.querySelectorAll('.game-switch-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', e => {
       const game = e.currentTarget.dataset.game;
-      if (!game) return;
       document.querySelectorAll('.game-switch-btn').forEach(b => b.classList.remove('active'));
       e.currentTarget.classList.add('active');
-
       document.querySelectorAll('.game-page').forEach(p => p.classList.remove('active'));
       const page = document.getElementById(`${game}-page`);
       if (page) page.classList.add('active');
     });
   });
 
-
   document.querySelectorAll('.solo-tab-link').forEach(tab => {
-    tab.addEventListener('click', (e) => {
+    tab.addEventListener('click', e => {
       const tabName = e.currentTarget.dataset.tab;
-      if (!tabName) return;
       document.querySelectorAll('.solo-tab-link').forEach(t => t.classList.remove('active'));
-      e.currentTarget.classList.add('active');
-
       document.querySelectorAll('.solo-tab-content').forEach(c => c.classList.remove('active'));
+      e.currentTarget.classList.add('active');
       const content = document.getElementById(tabName);
       if (content) content.classList.add('active');
     });
   });
 
   const joinSoloBtn = document.getElementById('join-solo-btn');
-  if (joinSoloBtn) {
-    joinSoloBtn.addEventListener('click', joinSoloLottery);
-  }
+  if (joinSoloBtn) joinSoloBtn.addEventListener('click', joinSoloLottery);
 
   const joinTeamBtn = document.getElementById('join-team-btn');
   if (joinTeamBtn) {
     joinTeamBtn.addEventListener('click', () => {
-      const availableTeam = gameState.team.teams.find(team => (team.members?.length || 0) < 10);
-      if (availableTeam) {
-        joinTeamLottery(availableTeam.id);
-      } else {
-        showGameNotification('No available teams. Create a new team!', 'error');
-      }
+      const availableTeam = gameState.team.teams.find(team => (team.members || []).length < 10);
+      if (availableTeam) joinTeamLottery(availableTeam.id);
+      else showGameNotification('No available teams. Create a new team!', 'error');
     });
   }
 
   const createTeamBtn = document.getElementById('create-team-btn');
-  if (createTeamBtn) {
-    createTeamBtn.addEventListener('click', createNewTeam);
-  }
+  if (createTeamBtn) createTeamBtn.addEventListener('click', createNewTeam);
 
-
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', e => {
     const teamItem = e.target.closest('.team-item');
     if (!teamItem) return;
     const teamId = teamItem.dataset.teamId;
@@ -1421,189 +1079,179 @@ function setupGameEventListeners() {
 }
 
 function showGameNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: var(--border-radius);
-        font-weight: 600;
-        z-index: 1000;
-        animation: slideDown 0.3s ease-out;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    z-index: 1000;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  `;
+  notification.textContent = message;
+  document.body.appendChild(notification);
 
+  setTimeout(() => {
+    notification.style.animation = 'slideUp 0.3s ease-in';
     setTimeout(() => {
-        notification.style.animation = 'slideUp 0.3s ease-in';
-        setTimeout(() => document.body.removeChild(notification), 300);
-    }, 3000);
+      if (document.body.contains(notification)) document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
 }
 
-function showGameModal(title, message, emoji = '🎉') {
-    const modal = document.createElement('div');
-    modal.className = 'game-modal active';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="win-animation">${emoji}</div>
-            <h3 class="modal-title">${title}</h3>
-            <div class="modal-prize">${message}</div>
-            <button class="close-modal">Claim Prize</button>
-        </div>
-    `;
+function showGameModal(title, message, emoji) {
+  const modal = document.createElement('div');
+  modal.className = 'game-modal active';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="win-animation">${emoji}</div>
+      <h3 class="modal-title">${title}</h3>
+      <div class="modal-prize">${message}</div>
+      <button class="close-modal">Claim Prize</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
 
-    document.body.appendChild(modal);
-
-    modal.querySelector('.close-modal').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-
-    setTimeout(() => {
-        if (document.body.contains(modal)) {
-            document.body.removeChild(modal);
-        }
-    }, 5000);
+  const close = () => {
+    if (document.body.contains(modal)) document.body.removeChild(modal);
+  };
+  modal.querySelector('.close-modal').addEventListener('click', close);
+  setTimeout(close, 5000);
 }
 
-/* ---------- Init + Event wiring ---------- */
+/* ---------- Telegram profile ---------- */
+
+function getTWAUser() {
+  const u = tg?.initDataUnsafe?.user;
+  if (!u) return null;
+  return {
+    user_id: u.id,
+    username: u.username ?? null,
+    first_name: u.first_name ?? null,
+    last_name: u.last_name ?? null,
+    language_code: u.language_code ?? null,
+    photo_url: u.photo_url ?? null,
+  };
+}
+
+async function syncProfile() {
+  const info = getTWAUser();
+  if (!info) return;
+  try {
+    await apiRequest('/player/syncProfile', 'POST', info);
+  } catch (e) {
+    console.warn('Profile sync failed:', e?.message || e);
+  }
+}
+
+/* ---------- Passive loop ---------- */
+
+function gameLoop() {
+  requestAnimationFrame(gameLoop);
+  const now = Date.now();
+  const delta = (now - lastFrameTime) / 1000;
+  lastFrameTime = now;
+
+  if (playerData) {
+    const passiveIncome = autoClickRate.times(delta);
+    score = score.plus(passiveIncome);
+    updateUI();
+  }
+}
+
+/* ---------- Init ---------- */
 
 async function init() {
-    tg.ready(() => {
-        tg.expand();
-    });
+  tg.ready();
+  tg.expand();
 
-    const u = tg?.initDataUnsafe?.user;
-    if (u?.id) userId = u.id;
+  try {
+    await syncProfile();
+    await initGames();
+    await initTasksSystem();
 
-    try {
-        await syncProfile();
-        await initGames();
-        await initTasksSystem();
+    playerData = await apiRequest(`/player/${userId}`);
+    score = new Decimal(playerData.score);
+    clickValue = new Decimal(playerData.click_value);
+    autoClickRate = new Decimal(playerData.auto_click_rate);
 
-        playerData = await apiRequest(`/player/${userId}`);
-        score = new Decimal(playerData.score);
-        clickValue = new Decimal(playerData.click_value);
-        autoClickRate = new Decimal(playerData.auto_click_rate);
+    generateUpgradesHTML();
+    setupEventListeners();
+    updateUI();
+    updateGamesUI();
+    setupTransactionSearch();
 
-        generateUpgradesHTML();
-        setupEventListeners();
-        updateUI();
-        updateGamesUI();
-        setupTransactionSearch();
+    lastFrameTime = Date.now();
+    requestAnimationFrame(gameLoop);
 
-        lastFrameTime = Date.now();
-        requestAnimationFrame(gameLoop);
-
-        loadingOverlay.classList.remove('active');
-
-        updateTaskProgress('score');
-
-    } catch (error) {
-        console.error('Initialization failed:', error);
-        loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
-    }
+    loadingOverlay.classList.remove('active');
+    updateTaskProgress('score');
+  } catch (error) {
+    console.error('Initialization failed:', error);
+    loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
+  }
 }
 
 function setupEventListeners() {
-    for (const key in navButtons) {
-        if (navButtons[key] && key !== 'leaderboard') {
-            navButtons[key].onclick = () => showPage(key);
-        }
+  for (const key in navButtons) {
+    if (!navButtons[key]) continue;
+    if (key !== 'leaderboard') {
+      navButtons[key].onclick = () => showPage(key);
     }
+  }
 
-    document.querySelectorAll('.tab-link').forEach(tab => {
-        tab.onclick = (event) => {
-            const currentNav = event.currentTarget.parentElement;
-            currentNav.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+  navButtons.leaderboard?.addEventListener('click', () => {
+    showPage('leaderboard');
+    fetchAndDisplayLeaderboard('score');
+  });
 
-            if (currentNav.parentElement.id === 'upgrades') {
-                const tabName = event.currentTarget.dataset.tab;
-                const upgradesPage = document.getElementById('upgrades');
-                upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(tabName).classList.add('active');
-            } else if (currentNav.parentElement.id === 'leaderboard') {
-                fetchAndDisplayLeaderboard(event.currentTarget.dataset.sort);
-            }
-        };
-    });
+  coinImageEl.addEventListener('mousedown', () => {
+    if (!playerData) return;
+    score = score.plus(clickValue);
+    clicksThisSecond++;
+    tg.HapticFeedback.impactOccurred('light');
+    updateTaskProgress('clicks', 1);
+    coinImageEl.classList.remove('bounce');
+    void coinImageEl.offsetWidth;
+    coinImageEl.classList.add('bounce');
+    updateUI();
+  });
 
-    navButtons.leaderboard.addEventListener('click', () => {
-        showPage('leaderboard');
-        const defaultTab = document.querySelector('#leaderboard .tab-link[data-sort="score"]');
-        if (defaultTab && !defaultTab.classList.contains('active')) {
-            defaultTab.click();
-        } else if (!document.querySelector('.leaderboard-item')) {
-            fetchAndDisplayLeaderboard('score');
-        }
-    });
+  coinImageEl.addEventListener(
+    'touchstart',
+    event => {
+      if (!playerData) return;
+      event.preventDefault();
+      score = score.plus(clickValue);
+      clicksThisSecond++;
+      tg.HapticFeedback.impactOccurred('light');
+      coinImageEl.classList.remove('bounce');
+      void coinImageEl.offsetWidth;
+      coinImageEl.classList.add('bounce');
+      updateUI();
+    },
+    { passive: false },
+  );
 
-    coinImageEl.addEventListener('mousedown', () => {
-        if (!playerData) return;
-        score = score.plus(clickValue);
-        clicksThisSecond++;
-        tg.HapticFeedback.impactOccurred('light');
+  document.getElementById('send-btn')?.addEventListener('click', handleSendCoins);
+  setupTransactionSearch();
 
-        updateTaskProgress('clicks', 1);
-        updateTaskProgress('clicks_5s', 0);
+  setInterval(() => {
+    cpsElement.textContent = `${clicksThisSecond} CPS`;
+    clicksThisSecond = 0;
+  }, 1000);
 
-        coinImageEl.classList.remove('bounce');
-        void coinImageEl.offsetWidth;
-        coinImageEl.classList.add('bounce');
-
-        updateUI();
-    });
-
-    coinImageEl.addEventListener('touchstart', (event) => {
-        if (!playerData) return;
-        event.preventDefault();
-        score = score.plus(clickValue);
-        clicksThisSecond++;
-        tg.HapticFeedback.impactOccurred('light');
-
-        coinImageEl.classList.remove('bounce');
-        void coinImageEl.offsetWidth;
-        coinImageEl.classList.add('bounce');
-        updateUI();
-    }, { passive: false });
-
-    document.querySelectorAll('#tasks .tab-link').forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            const tabName = e.currentTarget.dataset.tab;
-            document.querySelectorAll('#tasks .tasks-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.querySelectorAll('#tasks .tab-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.getElementById(tabName).classList.add('active');
-            e.currentTarget.classList.add('active');
-        });
-    });
-
-    setupTransactionSearch();
-    document.getElementById('send-btn').addEventListener('click', handleSendCoins);
-
-    navButtons.games.onclick = () => showPage('games');
-
-    navButtons.transactions.addEventListener('click', () => {
-        showPage('transactions');
-        fetchTransactionHistory();
-    });
-
-    setInterval(() => {
-        cpsElement.textContent = `${clicksThisSecond} CPS`;
-        clicksThisSecond = 0;
-    }, 1000);
-
-    setInterval(() => {
-        if (playerData) apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-    }, SYNC_INTERVAL);
+  setInterval(() => {
+    if (playerData) {
+      apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+    }
+  }, SYNC_INTERVAL);
 }
 
 init();

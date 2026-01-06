@@ -59,11 +59,6 @@ body {
     display: flex;
 }
 
-#clicker.page.active {
-    overflow: hidden;
-    padding: 0;
-    height: 100vh;
-}
 
 @keyframes fadeIn {
     from {
@@ -505,20 +500,38 @@ body {
 
 /* Clicker image */
 
-#clicker-container,
+/* Clicker container and image */
 .clicker-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 70vh;
-    min-height: 400px;
-    max-height: calc(100vh - 200px);
-    position: absolute;
-    top: 0;
-    left: 0;
-    overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: calc(100vh - 220px); /* leave room for stats + bottom nav */
+  max-height: 700px;
+  padding-top: 3rem;
+  padding-bottom: 5rem;
+  overflow: hidden;
 }
+
+#clicker.page.active {
+  overflow: hidden;
+  padding: 0;
+  height: 100vh;
+}
+
+#coinImage {
+  width: 80vw;
+  max-width: 420px;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  user-select: none;
+  z-index: 5;
+  will-change: transform;
+  transition: filter 0.2s ease;
+}
+
+
 
 @media (max-height: 700px) {
     #clicker-container,
@@ -544,18 +557,6 @@ body {
     }
 }
 
-#coinImage {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    cursor: pointer;
-    user-select: none;
-    z-index: 5;
-    will-change: transform;
-    transition: filter 0.2s ease;
-}
 
 #coinImage.bounce {
     animation: gentleBounce 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
