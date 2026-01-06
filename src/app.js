@@ -590,6 +590,7 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
 
+      // avatar
       let pfpElement;
       if (player.profile_photo_url) {
         pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
@@ -600,11 +601,8 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
       }
 
       const username = player.username || 'Anonymous';
-      const profileLink = player.username ? `https://t.me/${player.username}` : null;
-
-      const usernameHtml = profileLink
-        ? `<a href="${profileLink}" class="lb-username-link" target="_blank" rel="noopener noreferrer">@${player.username}</a>`
-        : `<span class="lb-username-link anonymous">${username}</span>`;
+      const hasUsername = Boolean(player.username);
+      const displayUsername = hasUsername ? `@${player.username}` : username;
 
       let displayValue;
       switch (sortBy) {
@@ -622,17 +620,41 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         <div class="rank rank-${rank}">${rank}</div>
         ${pfpElement}
         <div class="user-details">
-          <div class="username">${usernameHtml}</div>
+          <div class="username">${displayUsername}</div>
         </div>
         <div class="score-value">${displayValue}</div>
       `;
+
+      if (hasUsername) {
+        item.dataset.username = player.username;
+        item.classList.add('lb-clickable');
+      }
+
       listContainer.appendChild(item);
+    });
+
+    listContainer.querySelectorAll('.leaderboard-item.lb-clickable').forEach(row => {
+      row.addEventListener('click', () => {
+        const uname = row.dataset.username;
+        if (!uname) return;
+
+        const link = `https://t.me/${uname}`;
+
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
+          Telegram.WebApp.openTelegramLink(`https://t.me/${uname}`);
+          Telegram.WebApp.minimize();
+        } else {
+
+          window.open(link, '_blank', 'noopener,noreferrer');
+        }
+      });
     });
   } catch (error) {
     listContainer.innerHTML = `<p style="text-align: center;">Error loading leaderboard.</p>`;
     console.error('Failed to load leaderboard:', error);
   }
 }
+
 
 
 const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
