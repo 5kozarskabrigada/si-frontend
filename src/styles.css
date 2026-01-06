@@ -1598,3 +1598,19 @@ body {
     border-top: 1px solid var(--border-color);
     z-index: 100;
 }
+
+
+.lb-username-link {
+  color: var(--accent-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.lb-username-link:hover {
+  text-decoration: underline;
+}
+
+.lb-username-link.anonymous {
+  color: var(--text-secondary);
+  cursor: default;
+}

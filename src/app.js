@@ -580,7 +580,7 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     const players = await apiRequest(`/leaderboard/${sortBy}`);
     listContainer.innerHTML = '';
 
-    if (players.length === 0) {
+    if (!players || players.length === 0) {
       listContainer.innerHTML = '<p style="text-align: center;">The leaderboard is empty!</p>';
       return;
     }
@@ -599,23 +599,30 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
       }
 
+      const username = player.username || 'Anonymous';
+      const profileLink = player.username ? `https://t.me/${player.username}` : null;
+
+      const usernameHtml = profileLink
+        ? `<a href="${profileLink}" class="lb-username-link" target="_blank" rel="noopener noreferrer">@${player.username}</a>`
+        : `<span class="lb-username-link anonymous">${username}</span>`;
+
       let displayValue;
       switch (sortBy) {
         case 'click_value':
-          displayValue = `${new Decimal(player.click_value).toFixed(9)}`;
+          displayValue = new Decimal(player.click_value).toFixed(9);
           break;
         case 'auto_click_rate':
-          displayValue = `${new Decimal(player.auto_click_rate).toFixed(9)}`;
+          displayValue = new Decimal(player.auto_click_rate).toFixed(9);
           break;
         default:
-          displayValue = `${new Decimal(player.score).toFixed(9)}`;
+          displayValue = new Decimal(player.score).toFixed(9);
       }
 
       item.innerHTML = `
         <div class="rank rank-${rank}">${rank}</div>
         ${pfpElement}
         <div class="user-details">
-          <div class="username">${player.username || 'Anonymous'}</div>
+          <div class="username">${usernameHtml}</div>
         </div>
         <div class="score-value">${displayValue}</div>
       `;
@@ -626,6 +633,7 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     console.error('Failed to load leaderboard:', error);
   }
 }
+
 
 const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
 
