@@ -75,6 +75,8 @@ body {
     }
 }
 
+/* Loading overlay */
+
 #loading-overlay {
     position: fixed;
     top: 0;
@@ -112,6 +114,8 @@ body {
         transform: rotate(360deg);
     }
 }
+
+/* Clicker stats */
 
 .stats-container {
     position: absolute;
@@ -200,6 +204,8 @@ body {
     font-weight: 600;
     font-size: 0.9rem;
 }
+
+/* Tasks & achievements */
 
 .tasks-tab-content {
     display: none;
@@ -315,6 +321,8 @@ body {
     font-size: 0.8rem;
 }
 
+/* Search / transactions filter */
+
 .search-container {
     margin-bottom: 1rem;
 }
@@ -339,6 +347,7 @@ body {
     display: none;
 }
 
+/* Bottom nav */
 
 .nav-btn {
     display: flex;
@@ -389,6 +398,8 @@ body {
     background: rgba(142, 68, 173, 0.1);
 }
 
+/* Page titles */
+
 .page-title {
     display: flex;
     align-items: center;
@@ -408,6 +419,8 @@ body {
     font-size: 1.5rem;
     color: var(--primary-accent);
 }
+
+/* Upgrades */
 
 .upgrade-nav {
     display: flex;
@@ -490,7 +503,10 @@ body {
     font-size: 0.9rem;
 }
 
-#clicker-container {
+/* Clicker image */
+
+#clicker-container,
+.clicker-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -505,21 +521,24 @@ body {
 }
 
 @media (max-height: 700px) {
-    #clicker-container {
+    #clicker-container,
+    .clicker-container {
         height: 65vh;
         min-height: 350px;
     }
 }
 
 @media (max-height: 500px) {
-    #clicker-container {
+    #clicker-container,
+    .clicker-container {
         height: 60vh;
         min-height: 300px;
     }
 }
 
 @media (min-height: 1000px) {
-    #clicker-container {
+    #clicker-container,
+    .clicker-container {
         height: 75vh;
         max-height: 800px;
     }
@@ -571,6 +590,8 @@ body {
 #coinImage.bump {
     transform: scale(1.08);
 }
+
+/* Leaderboard */
 
 .leaderboard-nav {
     display: flex;
@@ -680,6 +701,8 @@ body {
     text-align: right;
 }
 
+/* Generic tab nav */
+
 .tab-nav {
     display: flex;
     justify-content: center;
@@ -706,6 +729,8 @@ body {
     box-shadow: 0 0 10px var(--primary-accent-glow);
 }
 
+/* Responsive */
+
 @media (min-width: 600px) {
     :root {
         font-size: 16px;
@@ -726,6 +751,8 @@ body {
         font-weight: 600;
     }
 }
+
+/* Wallet / transactions */
 
 .wallet-card {
     background: var(--bg-surface-solid);
@@ -838,7 +865,8 @@ body {
     color: #e74c3c;
 }
 
-/* Games Page Styles - FIXED VERSION */
+/* Games main page */
+
 #games.page {
     padding: 1rem;
     background: var(--bg-primary);
@@ -1102,6 +1130,8 @@ body {
     color: var(--primary-accent);
 }
 
+/* Winners card (simple list under games) */
+
 .winners-card {
     background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
@@ -1147,7 +1177,199 @@ body {
     color: var(--text-secondary);
 }
 
+/* Extended Solo section: tabs + chat/top */
+
+.games-switcher {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.game-switch-btn {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.game-switch-btn.active {
+    background: var(--primary-accent);
+    color: #fff;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 10px var(--primary-accent-glow);
+}
+
+.game-page {
+    display: none;
+}
+
+.game-page.active {
+    display: block;
+}
+
+.solo-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.solo-tab-link {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-solid);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.solo-tab-link.active {
+    background: var(--primary-accent);
+    color: #fff;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 10px var(--primary-accent-glow);
+}
+
+.solo-tab-content {
+    display: none;
+}
+
+.solo-tab-content.active {
+    display: block;
+}
+
+.solo-card {
+    background: var(--bg-surface-solid);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.solo-main-info {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.solo-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.solo-pot-amount,
+.solo-your-bet {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.solo-timer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.solo-timer {
+    font-family: monospace;
+    color: #f39c12;
+}
+
+.participants-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.participants-container {
+    margin-top: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+/* Winners chat style (solo) */
+
+.winners-chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.winner-message {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-color);
+}
+
+.winner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.winner-name {
+    font-weight: 600;
+}
+
+.winner-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.winner-body {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.35;
+}
+
+.winner-body strong {
+    font-weight: 600;
+}
+
+/* Top list */
+
+.top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.top-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-surface-solid);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 0.75rem;
+}
+
+.top-user {
+    font-weight: 500;
+}
+
+.top-amount {
+    font-weight: 600;
+}
+
 /* Game results modal */
+
 .game-modal {
     display: none;
     position: fixed;
@@ -1221,6 +1443,7 @@ body {
     cursor: pointer;
 }
 
+/* Bottom nav bar */
 
 .bottom-nav {
     position: absolute;
@@ -1232,7 +1455,7 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: grid;
-    grid-template-columns: repeat(7, 1fr); 
+    grid-template-columns: repeat(7, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
     z-index: 100;

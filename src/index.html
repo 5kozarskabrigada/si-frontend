@@ -94,102 +94,94 @@
                 <h1 class="page-title"><span class="title-icon">🎨</span>Skins</h1>
             </section>
 
-            <section id="games" class="page">
-                <h1 class="page-title"><span class="title-icon">🎰</span>Games</h1>
-                
-                <div class="games-header">
-                    <div class="balance-display">
-                        <span class="balance-label">Your Balance:</span>
-                        <span id="games-balance" class="balance-amount">0.000000000</span>
-                    </div>
-                </div>
+<section id="games" class="page">
+  <h1 class="page-title"><span class="title-icon">🎰</span>Games</h1>
 
-                <div class="games-container">
-                    <div class="game-card">
-                        <div class="game-card-header">
-                            <h3>Solo Lottery</h3>
-                            <span class="game-status active">ACTIVE</span>
-                        </div>
-                        <div class="game-stats">
-                            <div class="stat-row">
-                                <span>Current Pot:</span>
-                                <span id="solo-pot" class="pot-amount">0</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Your Bet:</span>
-                                <span id="your-solo-bet" class="your-bet">0</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Time Left:</span>
-                                <span id="solo-timer" class="timer">05:00</span>
-                            </div>
-                        </div>
-                        
-                        <div class="bet-controls">
-                            <div class="bet-amount-input">
-                                <input type="number" id="solo-bet-amount" placeholder="Enter amount" min="0.000000001" step="0.000000001">
-                                <button class="quick-bet-btn" data-multiplier="0.5">1.5x</button>
-                                <button class="quick-bet-btn" data-multiplier="2">2×</button>
-                                <button class="quick-bet-btn" data-multiplier="10">10×</button>
-                            </div>
-                            <button id="join-solo-btn" class="join-btn">Join Game</button>
-                        </div>
-                        
-                        <div class="participants-list">
-                            <h4>Participants (<span id="solo-participants-count">0</span>)</h4>
-                            <div id="solo-participants" class="participants-container">
-                        </div>
-                    </div>
+  <div class="games-header">
+    <div class="balance-display">
+      <span class="balance-label">Your Balance:</span>
+      <span id="games-balance" class="balance-amount">0.000000000</span>
+    </div>
+  </div>
 
-                    <div class="game-card">
-                        <div class="game-card-header">
-                            <h3>Team Lottery</h3>
-                            <span class="game-status active">ACTIVE</span>
-                        </div>
-                        <div class="game-stats">
-                            <div class="stat-row">
-                                <span>Team Pot:</span>
-                                <span id="team-pot" class="pot-amount">0</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Your Bet:</span>
-                                <span id="your-team-bet" class="your-bet">0</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Time Left:</span>
-                                <span id="team-timer" class="timer">10:00</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>Team Size:</span>
-                                <span id="team-size" class="team-size">0/10</span>
-                            </div>
-                        </div>
-                        
-                        <div class="bet-controls">
-                            <div class="bet-amount-input">
-                                <input type="number" id="team-bet-amount" placeholder="Enter amount" min="0.000000001" step="0.000000001">
-                                <button class="quick-bet-btn" data-multiplier="0.5">1.5</button>
-                                <button class="quick-bet-btn" data-multiplier="2">2×</button>
-                                <button class="quick-bet-btn" data-multiplier="10">10×</button>
-                            </div>
-                            <button id="join-team-btn" class="join-btn team-btn">Join Team</button>
-                            <button id="create-team-btn" class="create-team-btn">Create New Team</button>
-                        </div>
-                        
-                        <div class="teams-list">
-                            <h4>Active Teams (<span id="active-teams-count">0</span>)</h4>
-                            <div id="teams-container" class="teams-container">
-                            </div>
-                        </div>
-                    </div>
+  <!-- Game selector -->
+  <div class="games-switcher">
+    <button class="game-switch-btn active" data-game="solo">Solo Lottery</button>
+    <button class="game-switch-btn" data-game="team">Team Lottery</button>
+  </div>
 
-                    <div class="winners-card">
-                        <h3>🏆 Recent Winners</h3>
-                        <div id="recent-winners" class="winners-list">
-                        </div>
-                    </div>
-                </div>
-            </section>
+  <!-- SOLO LOTTERY PAGE -->
+  <div id="solo-page" class="game-page active">
+    <div class="solo-tabs">
+      <button class="solo-tab-link active" data-tab="solo-play">Play</button>
+      <button class="solo-tab-link" data-tab="solo-winners">Winners</button>
+      <button class="solo-tab-link" data-tab="solo-top">Top</button>
+    </div>
+
+    <!-- Play tab -->
+    <div id="solo-play" class="solo-tab-content active">
+      <div class="solo-card">
+        <div class="solo-main-info">
+          <div>
+            <div class="solo-label">Current pot</div>
+            <div id="solo-pot" class="solo-pot-amount">0.000000000</div>
+          </div>
+          <div>
+            <div class="solo-label">Your bet</div>
+            <div id="your-solo-bet" class="solo-your-bet">0.000000000</div>
+          </div>
+        </div>
+
+        <div class="solo-timer-row">
+          <span class="solo-label">Time left</span>
+          <span id="solo-timer" class="solo-timer">05:00</span>
+        </div>
+
+        <div class="bet-amount-input">
+          <input
+            type="number"
+            id="solo-bet-amount"
+            placeholder="Enter amount"
+            min="0.000000001"
+            step="0.000000001"
+          />
+          <button class="quick-bet-btn" data-multiplier="0.5">1.5×</button>
+          <button class="quick-bet-btn" data-multiplier="2">2×</button>
+          <button class="quick-bet-btn" data-multiplier="10">10×</button>
+        </div>
+
+        <button id="join-solo-btn" class="join-btn">Join Game</button>
+
+        <div class="participants-header">
+          <span class="solo-label">Participants</span>
+          <span id="solo-participants-count" class="solo-participants-count">0</span>
+        </div>
+        <div id="solo-participants" class="participants-container"></div>
+      </div>
+    </div>
+
+    <!-- Winners tab -->
+    <div id="solo-winners" class="solo-tab-content">
+      <div id="solo-winners-list" class="winners-chat-list">
+        <!-- filled from JS -->
+      </div>
+    </div>
+
+    <!-- Top tab -->
+    <div id="solo-top" class="solo-tab-content">
+      <div id="solo-top-list" class="top-list">
+        <!-- filled from JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM LOTTERY PAGE (can keep similar to what you have now) -->
+  <div id="team-page" class="game-page">
+    <!-- reuse your existing team card, bet input, teams list, etc. -->
+    <!-- you can keep your current Team Lottery markup here -->
+  </div>
+</section>
+
 
             <section id="transactions" class="page">
                 <h1 class="page-title"><span class="title-icon">💸</span>Wallet</h1>
