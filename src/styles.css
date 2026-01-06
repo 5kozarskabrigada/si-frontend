@@ -177,20 +177,7 @@ body {
     pointer-events: none;
 }
 
-@media (max-width: 480px) {
-    .stats-container {
-        top: 1%;
-        padding: 0.75rem;
-    }
 
-    .total-coins {
-        font-size: 1.8rem;
-    }
-
-    .stat-value {
-        font-size: 1rem;
-    }
-}
 
 .stats-header {
     text-align: center;
@@ -575,31 +562,6 @@ body {
 
 
 
-
-
-@media (max-height: 700px) {
-    #clicker-container,
-    .clicker-container {
-        height: 65vh;
-        min-height: 350px;
-    }
-}
-
-@media (max-height: 500px) {
-    #clicker-container,
-    .clicker-container {
-        height: 60vh;
-        min-height: 300px;
-    }
-}
-
-@media (min-height: 1000px) {
-    #clicker-container,
-    .clicker-container {
-        height: 75vh;
-        max-height: 800px;
-    }
-}
 
 
 #coinImage.bounce {
