@@ -1037,9 +1037,16 @@ function updateGamesUI() {
       .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
       .map(p => {
         const bet = safeDecimal(p.bet);
+
+        const hasFirst = p.first_name && p.first_name.trim().length > 0;
+        const hasLast = p.last_name && p.last_name.trim().length > 0;
+        const displayName = hasFirst
+          ? `${p.first_name}${hasLast ? ' ' + p.last_name : ''}`
+          : (p.username || 'Anonymous');
+
         return `
           <div class="participant-item">
-            <span class="participant-name">${p.username || 'Anonymous'}</span>
+            <span class="participant-name">${displayName}</span>
             <span class="participant-bet">${bet.toFixed(9)}</span>
           </div>
         `;
@@ -1083,28 +1090,32 @@ function updateGamesUI() {
       .join('');
   }
 
-winnersContainer.innerHTML = gameState.recentWinners
-  .map(w => {
-    const dateStr = new Date(w.date).toLocaleString();
-    const hasFirst = w.first_name && w.first_name.trim().length > 0;
-    const hasLast = w.last_name && w.last_name.trim().length > 0;
-    const displayName = hasFirst
-      ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
-      : (w.username || 'Anonymous');
+  const winnersContainer = document.getElementById('solo-winners-list');
+  if (winnersContainer) {
+    winnersContainer.innerHTML = gameState.recentWinners
+      .map(w => {
+        const dateStr = new Date(w.date).toLocaleString();
 
-    return `
-      <div class="winner-item">
-        <div>
-          <div class="winner-name">${displayName}</div>
-          <div class="winner-date">${dateStr}</div>
-        </div>
-        <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
-      </div>
-    `;
-  })
-  .join('');
+        const hasFirst = w.first_name && w.first_name.trim().length > 0;
+        const hasLast = w.last_name && w.last_name.trim().length > 0;
+        const displayName = hasFirst
+          ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
+          : (w.username || 'Anonymous');
 
+        return `
+          <div class="winner-item">
+            <div>
+              <div class="winner-name">${displayName}</div>
+              <div class="winner-date">${dateStr}</div>
+            </div>
+            <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
+          </div>
+        `;
+      })
+      .join('');
+  }
 }
+
 
 // ---------- Tasks / Achievements tab switching ----------
 function setupTaskTabs() {
@@ -1118,11 +1129,9 @@ function setupTaskTabs() {
     btn.addEventListener('click', () => {
       const target = btn.dataset.tab;
 
-      // toggle button active
       taskTabs.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      // toggle content
       Object.values(contents).forEach(c => c && c.classList.remove('active'));
       if (contents[target]) contents[target].classList.add('active');
     });
