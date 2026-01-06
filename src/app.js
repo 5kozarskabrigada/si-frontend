@@ -11,6 +11,8 @@ const perClickElement = document.getElementById('per-click-stat');
 const perSecondElement = document.getElementById('per-second-stat');
 const coinImageEl = document.getElementById('coinImage');
 
+let lastSoloWinId = localStorage.getItem('lastSoloWinId') || null;
+
 const pages = {
   clicker: document.getElementById('clicker'),
   upgrades: document.getElementById('upgrades'),
@@ -138,7 +140,7 @@ let gameState = {
   },
 };
 
-let lastSoloWinId = null;
+
 
 function safeDecimal(value) {
   try {
@@ -870,6 +872,33 @@ async function joinSoloLottery() {
   }
 }
 
+async function drawSoloLottery() {
+  try {
+    const result = await apiRequest('/games/draw-solo', 'POST', { userId });
+
+    if (result.success && result.winner && result.prize) {
+      const winId = `${result.winner.userId}-${result.prize}`;
+
+      if (result.winner.userId === String(userId) && winId !== lastSoloWinId) {
+        lastSoloWinId = winId;
+        localStorage.setItem('lastSoloWinId', winId);
+
+        showGameModal(
+          'You Won!',
+          `+${result.prize} SISI`,
+          '🎉'
+        );
+      }
+    }
+
+    await initGames();
+    updateGamesUI();
+  } catch (e) {
+    console.error('draw-solo failed', e);
+    showGameNotification(e.message || 'Failed to draw winner', 'error');
+  }
+}
+
 async function joinTeamLottery(teamId) {
   const betAmountInput = document.getElementById('team-bet-amount');
   const betAmount = parseBet(betAmountInput);
@@ -1236,6 +1265,7 @@ async function init() {
     await syncProfile();
     await initGames();
     await initTasksSystem();
+    
 
     playerData = await apiRequest(`/player/${userId}`);
     score = new Decimal(playerData.score);
@@ -1250,6 +1280,7 @@ async function init() {
     setupLeaderboardTabs();
     setupUpgradeTabs();
     setupTransactionSearch();
+    
 
     lastFrameTime = Date.now();
     requestAnimationFrame(gameLoop);
@@ -1270,6 +1301,10 @@ function setupEventListeners() {
     }
   }
 
+    const drawSoloBtn = document.getElementById('draw-solo-btn');
+    if (drawSoloBtn) {
+    drawSoloBtn.addEventListener('click', drawSoloLottery);
+    }
 
   navButtons.leaderboard?.addEventListener('click', () => {
     showPage('leaderboard');
