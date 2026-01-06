@@ -19,7 +19,6 @@ const pages = {
     skins: document.getElementById('skins'),
     transactions: document.getElementById('transactions'),
     games: document.getElementById('games'),
-    game: document.getElementById('game'),
 };
 
 const navButtons = {
@@ -30,7 +29,6 @@ const navButtons = {
     skins: document.getElementById('nav-skins'),
     transactions: document.getElementById('nav-transactions'),
     games: document.getElementById('nav-games'),
-    game: document.getElementById('nav-game'),
 };
 
 const userInfo = {
@@ -458,23 +456,17 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 }
 
 function showPage(pageId) {
-    // If the target page or button is missing, just return
+
     if (!pages[pageId] || !navButtons[pageId]) return;
 
-    // Deactivate all existing pages (only if they exist)
     Object.values(pages).forEach(p => {
         if (p) p.classList.remove('active');
     });
 
-    // Activate the requested page
     pages[pageId].classList.add('active');
-
-    // Deactivate all nav buttons (only if they exist)
     Object.values(navButtons).forEach(b => {
         if (b) b.classList.remove('active');
     });
-
-    // Activate the requested nav button
     navButtons[pageId].classList.add('active');
 }
 
@@ -1202,81 +1194,123 @@ async function drawTeamWinner() {
 }
 
 function updateGamesUI() {
-    document.getElementById('games-balance').textContent = score.toFixed(9);
+  const balanceEl = document.getElementById('games-balance');
+  if (balanceEl) balanceEl.textContent = score.toFixed(9);
 
-    document.getElementById('solo-pot').textContent = gameState.solo.pot.toFixed(9);
-    document.getElementById('your-solo-bet').textContent =
-        typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed
-            ? gameState.yourBets.solo.toFixed(9)
-            : safeDecimal(gameState.yourBets.solo).toFixed(9);
+  const soloPotEl = document.getElementById('solo-pot');
+  if (soloPotEl) soloPotEl.textContent = gameState.solo.pot.toFixed(9);
 
-    document.getElementById('solo-participants-count').textContent = gameState.solo.participants.length;
+  const yourSoloBetEl = document.getElementById('your-solo-bet');
+  if (yourSoloBetEl) {
+    yourSoloBetEl.textContent =
+      typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed
+        ? gameState.yourBets.solo.toFixed(9)
+        : safeDecimal(gameState.yourBets.solo).toFixed(9);
+  }
 
-    const soloParticipantsContainer = document.getElementById('solo-participants');
+  const soloCountEl = document.getElementById('solo-participants-count');
+  if (soloCountEl) soloCountEl.textContent = gameState.solo.participants.length;
+
+  const soloParticipantsContainer = document.getElementById('solo-participants');
+  if (soloParticipantsContainer) {
     soloParticipantsContainer.innerHTML = gameState.solo.participants
-        .sort((a, b) => {
-            const betA = safeDecimal(a.bet);
-            const betB = safeDecimal(b.bet);
-            return betB.minus(betA).toNumber();
-        })
-        .map(p => {
-            const bet = safeDecimal(p.bet);
-            return `
-                <div class="participant-item">
-                    <span class="participant-name">${p.username || 'Anonymous'}</span>
-                    <span class="participant-bet">${bet.toFixed(9)} (${p.percentage || 0}%)</span>
-                </div>
-            `;
-        }).join('');
+      .sort((a, b) => {
+        const betA = safeDecimal(a.bet);
+        const betB = safeDecimal(b.bet);
+        return betB.minus(betA).toNumber();
+      })
+      .map(p => {
+        const bet = safeDecimal(p.bet);
+        return `
+          <div class="participant-item">
+            <span class="participant-name">${p.username || 'Anonymous'}</span>
+            <span class="participant-bet">${bet.toFixed(9)} (${p.percentage || 0}%)</span>
+          </div>
+        `;
+      }).join('');
+  }
 
-    document.getElementById('team-pot').textContent = gameState.team.pot.toFixed(9);
+  const teamPotEl = document.getElementById('team-pot');
+  if (teamPotEl) teamPotEl.textContent = gameState.team.pot.toFixed(9);
 
-    const teamBetText = gameState.yourBets.team ?
-        (() => {
-            const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
-            if (!team) return '0';
-            const total = safeDecimal(team.total);
-            return total.toFixed(9);
-        })() : '0';
+  const teamBetText = gameState.yourBets.team
+    ? (() => {
+        const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
+        if (!team) return '0';
+        const total = safeDecimal(team.total);
+        return total.toFixed(9);
+      })()
+    : '0';
 
-    document.getElementById('your-team-bet').textContent = teamBetText;
+  const yourTeamBetEl = document.getElementById('your-team-bet');
+  if (yourTeamBetEl) yourTeamBetEl.textContent = teamBetText;
 
-    document.getElementById('active-teams-count').textContent = gameState.team.teams.length;
+  const activeTeamsEl = document.getElementById('active-teams-count');
+  if (activeTeamsEl) activeTeamsEl.textContent = gameState.team.teams.length;
 
-    const teamsContainer = document.getElementById('teams-container');
+  const teamsContainer = document.getElementById('teams-container');
+  if (teamsContainer) {
     teamsContainer.innerHTML = gameState.team.teams
-        .sort((a, b) => {
-            const totalA = safeDecimal(a.total);
-            const totalB = safeDecimal(b.total);
-            return totalB.minus(totalA).toNumber();
-        })
-        .map(team => {
-            const total = safeDecimal(team.total);
-            return `
-                <div class="team-item" data-team-id="${team.id}">
-                    <div>
-                        <div class="team-name">${team.name || 'Unnamed Team'}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                            ${team.members?.length || 0}/10 members
-                        </div>
-                    </div>
-                    <span class="team-total">${total.toFixed(9)}</span>
-                </div>
-            `;
-        }).join('');
-
-    const winnersContainer = document.getElementById('recent-winners');
-    winnersContainer.innerHTML = gameState.recentWinners
-        .map(winner => `
-            <div class="winner-item">
-                <div>
-                    <div class="winner-name">${winner.username || 'Anonymous'}</div>
-                    <div class="winner-date">${new Date(winner.date || Date.now()).toLocaleDateString()}</div>
-                </div>
-                <div class="winner-amount">+${winner.amount || '0'}</div>
+      .sort((a, b) => {
+        const totalA = safeDecimal(a.total);
+        const totalB = safeDecimal(b.total);
+        return totalB.minus(totalA).toNumber();
+      })
+      .map(team => {
+        const total = safeDecimal(team.total);
+        return `
+          <div class="team-item" data-team-id="${team.id}">
+            <div>
+              <div class="team-name">${team.name || 'Unnamed Team'}</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                ${team.members?.length || 0}/10 members
+              </div>
             </div>
-        `).join('');
+            <span class="team-total">${total.toFixed(9)}</span>
+          </div>
+        `;
+      }).join('');
+  }
+
+
+  const winnersContainer = document.getElementById('solo-winners-list');
+  if (winnersContainer) {
+    winnersContainer.innerHTML = gameState.recentWinners.map(w => {
+      const dateStr = new Date(w.date || Date.now()).toLocaleString();
+      const putText = w.bet ? safeDecimal(w.bet).toFixed(9) : '—';
+      const winText = safeDecimal(w.amount || 0).toFixed(9);
+      const rateText = w.winRate != null ? `${w.winRate.toFixed(2)}%` : '';
+
+      return `
+        <div class="winner-message">
+          <div class="winner-header">
+            <span class="winner-name">${w.username || 'Anonymous'}</span>
+            <span class="winner-time">${dateStr}</span>
+          </div>
+          <div class="winner-body">
+            Put: <strong>${putText}</strong><br>
+            Won: <strong>${winText}</strong>${rateText ? ` • Win rate: <strong>${rateText}</strong>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+
+  const topList = document.getElementById('solo-top-list');
+  if (topList) {
+    const sortedTop = [...gameState.recentWinners].sort((a, b) =>
+      safeDecimal(b.amount).minus(safeDecimal(a.amount)).toNumber()
+    );
+    topList.innerHTML = sortedTop.map(w => `
+      <div class="top-item">
+        <div class="top-user">${w.username || 'Anonymous'}</div>
+        <div class="top-amount">${safeDecimal(w.amount).toFixed(9)}</div>
+      </div>
+    `).join('');
+  }
 }
+
 
 function startGameTimers() {
     updateTimers();
@@ -1312,38 +1346,78 @@ function updateTimers() {
 }
 
 function setupGameEventListeners() {
-    document.querySelectorAll('.quick-bet-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const multiplier = parseFloat(e.target.dataset.multiplier);
-            const input = e.target.closest('.bet-amount-input').querySelector('input[type="number"]');
-            const currentValue = safeDecimal(input.value);
-            const newValue = currentValue.times(multiplier);
-            input.value = newValue.toFixed(9);
-        });
+
+  document.querySelectorAll('.quick-bet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const multiplier = parseFloat(e.target.dataset.multiplier);
+      const input = e.target.closest('.bet-amount-input')?.querySelector('input[type="number"]');
+      if (!input || isNaN(multiplier)) return;
+      const currentValue = safeDecimal(input.value);
+      const newValue = currentValue.times(multiplier);
+      input.value = newValue.toFixed(9);
     });
+  });
 
-    document.getElementById('join-solo-btn').addEventListener('click', joinSoloLottery);
 
-    document.getElementById('join-team-btn').addEventListener('click', () => {
-        const availableTeam = gameState.team.teams.find(team => (team.members?.length || 0) < 10);
-        if (availableTeam) {
-            joinTeamLottery(availableTeam.id);
-        } else {
-            showGameNotification('No available teams. Create a new team!', 'error');
-        }
+  document.querySelectorAll('.game-switch-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const game = e.currentTarget.dataset.game;
+      if (!game) return;
+      document.querySelectorAll('.game-switch-btn').forEach(b => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+
+      document.querySelectorAll('.game-page').forEach(p => p.classList.remove('active'));
+      const page = document.getElementById(`${game}-page`);
+      if (page) page.classList.add('active');
     });
+  });
 
-    document.getElementById('create-team-btn').addEventListener('click', createNewTeam);
 
-    document.addEventListener('click', (e) => {
-        const teamItem = e.target.closest('.team-item');
-        if (!teamItem) return;
-        const teamId = teamItem.dataset.teamId;
-        const team = gameState.team.teams.find(t => t.id === teamId);
-        if (team && confirm(`Join team "${team.name}"?`)) {
-            joinTeamLottery(teamId);
-        }
+  document.querySelectorAll('.solo-tab-link').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      const tabName = e.currentTarget.dataset.tab;
+      if (!tabName) return;
+      document.querySelectorAll('.solo-tab-link').forEach(t => t.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+
+      document.querySelectorAll('.solo-tab-content').forEach(c => c.classList.remove('active'));
+      const content = document.getElementById(tabName);
+      if (content) content.classList.add('active');
     });
+  });
+
+  const joinSoloBtn = document.getElementById('join-solo-btn');
+  if (joinSoloBtn) {
+    joinSoloBtn.addEventListener('click', joinSoloLottery);
+  }
+
+  const joinTeamBtn = document.getElementById('join-team-btn');
+  if (joinTeamBtn) {
+    joinTeamBtn.addEventListener('click', () => {
+      const availableTeam = gameState.team.teams.find(team => (team.members?.length || 0) < 10);
+      if (availableTeam) {
+        joinTeamLottery(availableTeam.id);
+      } else {
+        showGameNotification('No available teams. Create a new team!', 'error');
+      }
+    });
+  }
+
+  const createTeamBtn = document.getElementById('create-team-btn');
+  if (createTeamBtn) {
+    createTeamBtn.addEventListener('click', createNewTeam);
+  }
+
+
+  document.addEventListener('click', (e) => {
+    const teamItem = e.target.closest('.team-item');
+    if (!teamItem) return;
+    const teamId = teamItem.dataset.teamId;
+    const team = gameState.team.teams.find(t => t.id === teamId);
+    if (team && confirm(`Join team "${team.name}"?`)) {
+      joinTeamLottery(teamId);
+    }
+  });
 }
 
 function showGameNotification(message, type = 'info') {
