@@ -876,10 +876,16 @@ async function drawSoloLottery() {
   try {
     const result = await apiRequest('/games/draw-solo', 'POST', { userId });
 
-    if (result.success && result.winner && result.prize) {
-      const winId = `${result.winner.userId}-${result.prize}`;
+    // If backend returned an error field, just show it and stop
+    if (!result.success) {
+      showGameNotification(result.error || 'Cannot draw yet', 'error');
+      return;
+    }
 
-      if (result.winner.userId === String(userId) && winId !== lastSoloWinId) {
+    if (result.winner && result.prize) {
+      const winId = String(result.winner.userId);
+
+      if (String(result.winner.userId) === String(userId) && winId !== lastSoloWinId) {
         lastSoloWinId = winId;
         localStorage.setItem('lastSoloWinId', winId);
 
