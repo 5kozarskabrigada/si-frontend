@@ -1305,17 +1305,34 @@ body {
     margin-bottom: 1rem;
 }
 
+
 .game-switch-btn {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
   background: #181724;
-  border-color: rgba(255,255,255,0.03);
   color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+
 .game-switch-btn.active[data-game="solo"] {
   background: var(--primary-accent);
+  color: #fff;
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 10px var(--primary-accent-glow);
 }
+
 .game-switch-btn.active[data-game="team"] {
   background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.45);
 }
+
 
 #withdraw-solo-btn {
   background: var(--accent-red);
