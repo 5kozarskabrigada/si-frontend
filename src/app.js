@@ -1057,6 +1057,28 @@ function setupLeaderboardTabs() {
   });
 }
 
+    function setupUpgradeTabs() {
+    const tabButtons = document.querySelectorAll('#upgrades .tab-link');
+    const tabContents = {
+        clickUpgrades: document.getElementById('clickUpgrades'),
+        autoUpgrades: document.getElementById('autoUpgrades'),
+        offlineUpgrades: document.getElementById('offlineUpgrades'),
+    };
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+
+        tabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        Object.values(tabContents).forEach(c => c && c.classList.remove('active'));
+        if (tabContents[target]) tabContents[target].classList.add('active');
+        });
+    });
+    }
+
+
 function setupGameEventListeners() {
   document.querySelectorAll('.quick-bet-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1224,9 +1246,10 @@ async function init() {
     setupEventListeners();
     updateUI();
     updateGamesUI();
-    setupTransactionSearch();
     setupTaskTabs();
     setupLeaderboardTabs();
+    setupUpgradeTabs();
+    setupTransactionSearch();
 
     lastFrameTime = Date.now();
     requestAnimationFrame(gameLoop);
