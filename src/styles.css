@@ -5,6 +5,10 @@
   --primary-accent: #7d3c98;
   --light-purple: #b586cb;
   --primary-accent-glow: rgba(125, 60, 152, 0.25);
+  --accent-teal: #1abc9c;
+  --accent-blue: #3498db;
+  --accent-red: #e74c3c;
+  --accent-green: #2ecc71;
   --text-primary: #e4e8f0;
   --text-secondary: #9da3b0;
   --border-color: rgba(125, 60, 152, 0.18);
@@ -12,6 +16,7 @@
   --font-family: 'Inter', sans-serif;
   color-scheme: dark;
 }
+
 
 
 .page {
@@ -1193,27 +1198,28 @@ body {
 }
 
 .game-switch-btn {
-    flex: 1;
-    padding: 0.6rem 0.8rem;
-    border-radius: 999px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-surface-solid);
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
+  background: #181724;
+  border-color: rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+}
+.game-switch-btn.active[data-game="solo"] {
+  background: var(--primary-accent);
+}
+.game-switch-btn.active[data-game="team"] {
+  background: var(--accent-blue);
 }
 
-.game-switch-btn.active {
-    background: var(--primary-accent);
-    color: #fff;
-    border-color: var(--primary-accent);
-    box-shadow: 0 0 10px var(--primary-accent-glow);
+#withdraw-solo-btn {
+  background: var(--accent-red);
+}
+#withdraw-solo-btn:hover:not(:disabled) {
+  background: #ff6b6b;
 }
 
 .game-page {
     display: none;
 }
+
 
 .game-page.active {
     display: block;

@@ -866,7 +866,6 @@ async function drawSoloLottery() {
   try {
     const result = await apiRequest('/games/draw-solo', 'POST', { userId });
 
-    // If backend returned an error field, just show it and stop
     if (!result.success) {
       showGameNotification(result.error || 'Cannot draw yet', 'error');
       return;
@@ -894,6 +893,28 @@ async function drawSoloLottery() {
     showGameNotification(e.message || 'Failed to draw winner', 'error');
   }
 }
+
+async function withdrawSoloLottery() {
+  try {
+    const result = await apiRequest('/games/withdraw-solo', 'POST', { userId });
+
+    if (!result.success) {
+      showGameNotification(result.error || 'Failed to withdraw', 'error');
+      return;
+    }
+
+    score = new Decimal(result.newBalance);
+    playerData.score = score.toFixed(9);
+    applyGameStateFromServer(result.state);
+    updateUI();
+    showGameNotification('Withdrawn from solo game', 'success');
+  } catch (e) {
+    console.error('withdrawSoloLottery failed', e);
+    showGameNotification(e.message || 'Failed to withdraw', 'error');
+  }
+}
+
+
 
 async function joinTeamLottery(teamId) {
   const betAmountInput = document.getElementById('team-bet-amount');
@@ -1171,7 +1192,11 @@ function showGameNotification(message, type = 'info') {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+    background: ${type === 'success'
+    ? 'var(--accent-green)'
+    : type === 'error'
+    ? 'var(--accent-red)'
+    : 'var(--accent-teal)'};
     color: white;
     padding: 1rem 2rem;
     border-radius: var(--border-radius);
@@ -1296,6 +1321,10 @@ function setupEventListeners() {
       navButtons[key].onclick = () => showPage(key);
     }
   }
+
+    const withdrawSoloBtn = document.getElementById('withdraw-solo-btn');
+    if (withdrawSoloBtn) withdrawSoloBtn.addEventListener('click', withdrawSoloLottery);
+
 
     const drawSoloBtn = document.getElementById('draw-solo-btn');
     if (drawSoloBtn) {
