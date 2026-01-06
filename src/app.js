@@ -600,9 +600,15 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         pfpElement = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
       }
 
-      const username = player.username || 'Anonymous';
-      const hasUsername = Boolean(player.username);
-      const displayUsername = hasUsername ? `@${player.username}` : username;
+        const hasFirst = player.first_name && player.first_name.trim().length > 0;
+        const hasLast = player.last_name && player.last_name.trim().length > 0;
+        const displayName = hasFirst
+        ? `${player.first_name}${hasLast ? ' ' + player.last_name : ''}`
+        : (player.username || 'Anonymous');
+
+        const hasUsername = Boolean(player.username);
+        const displayUsername = hasUsername ? `@${player.username}` : '';
+
 
       let displayValue;
       switch (sortBy) {
@@ -616,14 +622,16 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
           displayValue = new Decimal(player.score).toFixed(9);
       }
 
-      item.innerHTML = `
+        item.innerHTML = `
         <div class="rank rank-${rank}">${rank}</div>
         ${pfpElement}
         <div class="user-details">
-          <div class="username">${displayUsername}</div>
+            <div class="display-name">${displayName}</div>
+            ${displayUsername ? `<div class="username-tag">${displayUsername}</div>` : ''}
         </div>
         <div class="score-value">${displayValue}</div>
-      `;
+        `;
+
 
       if (hasUsername) {
         item.dataset.username = player.username;
@@ -1075,23 +1083,27 @@ function updateGamesUI() {
       .join('');
   }
 
-  const winnersContainer = document.getElementById('solo-winners-list');
-  if (winnersContainer) {
-    winnersContainer.innerHTML = gameState.recentWinners
-      .map(w => {
-        const dateStr = new Date(w.date).toLocaleString();
-        return `
-          <div class="winner-item">
-            <div>
-              <div class="winner-name">${w.username || 'Anonymous'}</div>
-              <div class="winner-date">${dateStr}</div>
-            </div>
-            <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
-          </div>
-        `;
-      })
-      .join('');
-  }
+winnersContainer.innerHTML = gameState.recentWinners
+  .map(w => {
+    const dateStr = new Date(w.date).toLocaleString();
+    const hasFirst = w.first_name && w.first_name.trim().length > 0;
+    const hasLast = w.last_name && w.last_name.trim().length > 0;
+    const displayName = hasFirst
+      ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
+      : (w.username || 'Anonymous');
+
+    return `
+      <div class="winner-item">
+        <div>
+          <div class="winner-name">${displayName}</div>
+          <div class="winner-date">${dateStr}</div>
+        </div>
+        <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
+      </div>
+    `;
+  })
+  .join('');
+
 }
 
 // ---------- Tasks / Achievements tab switching ----------
