@@ -782,16 +782,6 @@ function applyGameStateFromServer(state) {
     },
   };
 
-  const latest = gameState.recentWinners[0];
-  if (latest && latest.game === 'solo') {
-    const winId = `${latest.date}:${latest.username}:${latest.amount}`;
-    if (latest.username === userName && winId !== lastSoloWinId) {
-      lastSoloWinId = winId;
-      showGameModal('YOU WON!', `${latest.amount} coins!`, '🎉');
-      tg.HapticFeedback.notificationOccurred('success');
-    }
-  }
-
   updateGamesUI();
 }
 
