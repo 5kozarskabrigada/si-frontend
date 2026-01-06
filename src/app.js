@@ -540,33 +540,63 @@ function generateUpgradesHTML() {
   }
 }
 
+// async function purchaseUpgrade(upgradeId) {
+//   const btn = document.getElementById(`${upgradeId}_btn`);
+//   const originalText = btn.innerHTML;
+//   btn.disabled = true;
+
+//   updateTaskProgress('upgrades', 1);
+
+//   try {
+//     const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
+//     playerData = player;
+
+//     score = new Decimal(playerData.score);
+//     clickValue = new Decimal(playerData.click_value);
+//     autoClickRate = new Decimal(playerData.auto_click_rate);
+//     updateUI();
+
+//     tg.HapticFeedback.notificationOccurred('success');
+//     btn.innerHTML = 'Success!';
+//   } catch (error) {
+//     console.error('Upgrade failed:', error);
+//     tg.HapticFeedback.notificationOccurred('error');
+//     btn.innerHTML = 'Not Enough Coins';
+//   } finally {
+//     setTimeout(() => {
+//       btn.innerHTML = originalText;
+//       updateUI();
+//     }, 1000);
+//   }
+// }
+
+
 async function purchaseUpgrade(upgradeId) {
-  const btn = document.getElementById(`${upgradeId}_btn`);
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-
-  updateTaskProgress('upgrades', 1);
-
-  try {
-    const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
-    playerData = player;
-
-    score = new Decimal(playerData.score);
-    clickValue = new Decimal(playerData.click_value);
-    autoClickRate = new Decimal(playerData.auto_click_rate);
-    updateUI();
-
-    tg.HapticFeedback.notificationOccurred('success');
-    btn.innerHTML = 'Success!';
-  } catch (error) {
-    console.error('Upgrade failed:', error);
-    tg.HapticFeedback.notificationOccurred('error');
-    btn.innerHTML = 'Not Enough Coins';
-  } finally {
-    setTimeout(() => {
-      btn.innerHTML = originalText;
-      updateUI();
-    }, 1000);
+  const btn = document.querySelector(`[data-upgrade-id="${upgradeId}"]`);
+  if (btn) {
+    btn.disabled = true;
+    const oldText = btn.textContent;
+    btn.textContent = 'Buying...';
+    try {
+      const result = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
+      if (!result.success && result.error) {
+        showNotification(result.error, 'error');
+      } else {
+        playerData = result.player;
+        score = new Decimal(playerData.score);
+        updateUI();
+        generateUpgradesHTML();
+        showNotification('Upgrade purchased!', 'success');
+      }
+    } catch (e) {
+      showNotification('Failed to buy upgrade', 'error');
+      console.error(e);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
   }
 }
 
@@ -1031,28 +1061,62 @@ function updateGamesUI() {
   const soloCountEl = document.getElementById('solo-participants-count');
   if (soloCountEl) soloCountEl.textContent = gameState.solo.participants.length;
 
-  const soloParticipantsContainer = document.getElementById('solo-participants');
-  if (soloParticipantsContainer) {
-    soloParticipantsContainer.innerHTML = gameState.solo.participants
-      .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
-      .map(p => {
-        const bet = safeDecimal(p.bet);
+ const soloParticipantsContainer = document.getElementById('solo-participants');
+if (soloParticipantsContainer) {
+  soloParticipantsContainer.innerHTML = gameState.solo.participants
+    .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
+    .map(p => {
+      const bet = safeDecimal(p.bet);
 
-        const hasFirst = p.first_name && p.first_name.trim().length > 0;
-        const hasLast = p.last_name && p.last_name.trim().length > 0;
-        const displayName = hasFirst
-          ? `${p.first_name}${hasLast ? ' ' + p.last_name : ''}`
-          : (p.username || 'Anonymous');
+      const hasFirst = p.first_name && p.first_name.trim().length > 0;
+      const hasLast = p.last_name && p.last_name.trim().length > 0;
+      const displayName = hasFirst
+        ? `${p.first_name}${hasLast ? ' ' + p.last_name : ''}`
+        : (p.username || 'Anonymous');
+      const usernameTag = p.username ? `@${p.username}` : '';
 
-        return `
-          <div class="participant-item">
-            <span class="participant-name">${displayName}</span>
-            <span class="participant-bet">${bet.toFixed(9)}</span>
+      let avatarHtml;
+      if (p.profile_photo_url) {
+        avatarHtml = `<img src="${p.profile_photo_url}" class="pfp" alt="pfp">`;
+      } else {
+        const initial = displayName.charAt(0).toUpperCase();
+        const color = getColorForUser(p.username || displayName);
+        avatarHtml = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
+      }
+
+      const dataUsername = p.username ? `data-username="${p.username}"` : '';
+
+      return `
+        <div class="participant-item lb-clickable" ${dataUsername}>
+          ${avatarHtml}
+          <div class="participant-main">
+            <div class="participant-name">${displayName}</div>
+            ${usernameTag ? `<div class="participant-username">${usernameTag}</div>` : ''}
           </div>
-        `;
-      })
-      .join('');
-  }
+          <span class="participant-bet">${bet.toFixed(9)}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  // make participants clickable -> open Telegram profile
+  soloParticipantsContainer
+    .querySelectorAll('.participant-item.lb-clickable')
+    .forEach(row => {
+      row.addEventListener('click', () => {
+        const uname = row.dataset.username;
+        if (!uname) return;
+        const link = `https://t.me/${uname}`;
+        if (window.Telegram?.WebApp?.openTelegramLink) {
+          Telegram.WebApp.openTelegramLink(link);
+          Telegram.WebApp.minimize();
+        } else {
+          window.open(link, '_blank', 'noopener,noreferrer');
+        }
+      });
+    });
+}
+
 
   const teamPotEl = document.getElementById('team-pot');
   if (teamPotEl) teamPotEl.textContent = gameState.team.pot.toFixed(9);
@@ -1090,30 +1154,39 @@ function updateGamesUI() {
       .join('');
   }
 
-  const winnersContainer = document.getElementById('solo-winners-list');
-  if (winnersContainer) {
-    winnersContainer.innerHTML = gameState.recentWinners
-      .map(w => {
-        const dateStr = new Date(w.date).toLocaleString();
+const winnersContainer = document.getElementById('solo-winners-list');
+if (winnersContainer) {
+  winnersContainer.innerHTML = gameState.recentWinners
+    .map(w => {
+      const dateStr = new Date(w.date).toLocaleString();
 
-        const hasFirst = w.first_name && w.first_name.trim().length > 0;
-        const hasLast = w.last_name && w.last_name.trim().length > 0;
-        const displayName = hasFirst
-          ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
-          : (w.username || 'Anonymous');
+      const hasFirst = w.first_name && w.first_name.trim().length > 0;
+      const hasLast = w.last_name && w.last_name.trim().length > 0;
+      const displayName = hasFirst
+        ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
+        : (w.username || 'Anonymous');
+      const usernameTag = w.username ? `@${w.username}` : '';
 
-        return `
-          <div class="winner-item">
-            <div>
-              <div class="winner-name">${displayName}</div>
-              <div class="winner-date">${dateStr}</div>
-            </div>
-            <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
+      let avatarHtml = '';
+      if (w.profile_photo_url) {
+        avatarHtml = `<img src="${w.profile_photo_url}" class="pfp" alt="pfp">`;
+      }
+
+      return `
+        <div class="winner-item">
+          ${avatarHtml}
+          <div>
+            <div class="winner-name">${displayName}</div>
+            ${usernameTag ? `<div class="winner-username">${usernameTag}</div>` : ''}
+            <div class="winner-date">${dateStr}</div>
           </div>
-        `;
-      })
-      .join('');
-  }
+          <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
+        </div>
+      `;
+    })
+    .join('');
+    }
+  
 }
 
 
