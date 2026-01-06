@@ -21,6 +21,7 @@ const pages = {
     games: document.getElementById('games'),
     game: document.getElementById('game'),
 };
+
 const navButtons = {
     clicker: document.getElementById('nav-clicker'),
     upgrades: document.getElementById('nav-upgrades'),
@@ -28,10 +29,9 @@ const navButtons = {
     leaderboard: document.getElementById('nav-leaderboard'),
     skins: document.getElementById('nav-skins'),
     transactions: document.getElementById('nav-transactions'),
-    games: document.getElementById('nav-games'), 
+    games: document.getElementById('nav-games'),
     game: document.getElementById('nav-game'),
 };
-
 
 const userInfo = {
     user_id: tg.initDataUnsafe?.user?.id,
@@ -43,12 +43,13 @@ const userInfo = {
 };
 
 let userId = tg.initDataUnsafe?.user?.id ?? Date.now();
-
 const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest';
+
 let playerData = null;
 let score = new Decimal(0);
 let autoClickRate = new Decimal(0);
 let clickValue = new Decimal(0);
+
 const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
 let lastFrameTime = Date.now();
@@ -58,6 +59,7 @@ const TEAM_LOTTERY_DURATION = 10 * 60 * 1000;
 const HOUSE_FEE = 0.01;
 
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
+
 const upgrades = {
     click: {
         click_tier_1: { name: 'A Cups', benefit: '+0.000000001 per click' },
@@ -81,17 +83,29 @@ const upgrades = {
         offline_tier_5: { name: 'Designer Corset', benefit: '+0.000004096 per hour' },
     }
 };
+
 const baseCosts = {
-    click_tier_1: new Decimal('0.000000064'), click_tier_2: new Decimal('0.000001024'), click_tier_3: new Decimal('0.000016384'), click_tier_4: new Decimal('0.000262144'), click_tier_5: new Decimal('0.004194304'),
-    auto_tier_1: new Decimal('0.000000064'), auto_tier_2: new Decimal('0.000001024'), auto_tier_3: new Decimal('0.000016384'), auto_tier_4: new Decimal('0.000262144'), auto_tier_5: new Decimal('0.004194304'),
-    offline_tier_1: new Decimal('0.000000064'), offline_tier_2: new Decimal('0.000001024'), offline_tier_3: new Decimal('0.000016384'), offline_tier_4: new Decimal('0.000262144'), offline_tier_5: new Decimal('0.004194304'),
+    click_tier_1: new Decimal('0.000000064'),
+    click_tier_2: new Decimal('0.000001024'),
+    click_tier_3: new Decimal('0.000016384'),
+    click_tier_4: new Decimal('0.000262144'),
+    click_tier_5: new Decimal('0.004194304'),
+    auto_tier_1: new Decimal('0.000000064'),
+    auto_tier_2: new Decimal('0.000001024'),
+    auto_tier_3: new Decimal('0.000016384'),
+    auto_tier_4: new Decimal('0.000262144'),
+    auto_tier_5: new Decimal('0.004194304'),
+    offline_tier_1: new Decimal('0.000000064'),
+    offline_tier_2: new Decimal('0.000001024'),
+    offline_tier_3: new Decimal('0.000016384'),
+    offline_tier_4: new Decimal('0.000262144'),
+    offline_tier_5: new Decimal('0.004194304'),
 };
 
 const tasksSystem = {
     dailyTasks: [],
     achievements: [],
     lastDailyRefresh: null,
-
     dailyTaskTemplates: [
         { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
         { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
@@ -99,7 +113,6 @@ const tasksSystem = {
         { type: 'login', target: 1, title: 'Daily Login', description: 'Log in today', reward: '0.000000025' },
         { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' }
     ],
-
     permanentAchievements: [
         { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
         { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
@@ -110,7 +123,6 @@ const tasksSystem = {
         { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false }
     ]
 };
-
 
 let gameState = {
     solo: {
@@ -131,6 +143,24 @@ let gameState = {
         team: null
     }
 };
+
+/* ---------- Helpers ---------- */
+
+function safeDecimal(value) {
+    try {
+        return new Decimal(value || 0);
+    } catch {
+        return new Decimal(0);
+    }
+}
+
+function parseBet(inputEl) {
+    const raw = (inputEl.value || '0').trim();
+    if (!raw || isNaN(Number(raw))) return new Decimal(0);
+    return new Decimal(raw);
+}
+
+/* ---------- Tasks / Achievements ---------- */
 
 async function initTasksSystem() {
     await loadTasksProgress();
@@ -287,7 +317,7 @@ function renderDailyTasks() {
                 <div class="task-reward">Reward: ${task.reward} coins</div>
             </div>
             <div class="task-action">
-                <button class="claim-btn" 
+                <button class="claim-btn"
                     onclick="claimTaskReward('${task.id}', false)"
                     ${task.completed && !task.claimed ? '' : 'disabled'}>
                     ${task.claimed ? 'Claimed' : 'Claim'}
@@ -313,7 +343,7 @@ function renderAchievements() {
                 <div class="task-reward">Reward: ${achievement.reward} coins</div>
             </div>
             <div class="task-action">
-                <button class="claim-btn" 
+                <button class="claim-btn"
                     onclick="claimTaskReward('${achievement.id}', true)"
                     ${achievement.completed && !achievement.claimed ? '' : 'disabled'}>
                     ${achievement.claimed ? 'Claimed' : 'Claim'}
@@ -337,7 +367,9 @@ function startDailyTimer() {
 
         const timerElement = document.getElementById('refresh-timer');
         if (timerElement) {
-            timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes
+                .toString()
+                .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
     }
 
@@ -393,7 +425,7 @@ style.textContent = `
             transform: translateX(-50%) translateY(0);
         }
     }
-    
+
     @keyframes slideUp {
         from {
             opacity: 1;
@@ -406,7 +438,8 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-document.head.appendChild(style);
+
+/* ---------- API + UI Core ---------- */
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
@@ -486,15 +519,6 @@ function generateUpgradesHTML() {
     }
 }
 
-function openUpgradeTab(event) {
-    const tabName = event.currentTarget.dataset.tab;
-    const upgradesPage = document.getElementById('upgrades');
-    upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
-    upgradesPage.querySelectorAll('.upgrade-tab-link').forEach(l => l.classList.remove('active'));
-    document.getElementById(tabName).classList.add('active');
-    event.currentTarget.classList.add('active');
-}
-
 async function purchaseUpgrade(upgradeId) {
     const btn = document.getElementById(`${upgradeId}_btn`);
     const originalText = btn.innerHTML;
@@ -524,6 +548,8 @@ async function purchaseUpgrade(upgradeId) {
         }, 1000);
     }
 }
+
+/* ---------- Leaderboard ---------- */
 
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     const listContainer = document.getElementById('leaderboard-list');
@@ -580,8 +606,8 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     }
 }
 
-
 const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
+
 function getColorForUser(username = '') {
     let hash = 0;
     for (let i = 0; i < username.length; i++) {
@@ -591,6 +617,7 @@ function getColorForUser(username = '') {
     return userColors[index];
 }
 
+/* ---------- Wallet ---------- */
 
 async function handleSendCoins() {
     const sendBtn = document.getElementById('send-btn');
@@ -611,8 +638,8 @@ async function handleSendCoins() {
     try {
         const result = await apiRequest('/wallet/transfer', 'POST', {
             senderId: userId,
-            receiverUsername: receiverUsername,
-            amount: amount
+            receiverUsername,
+            amount
         });
 
         if (result.success) {
@@ -639,6 +666,7 @@ async function handleSendCoins() {
 
 function setupTransactionSearch() {
     const searchInput = document.getElementById('transaction-search');
+    if (!searchInput) return;
     searchInput.addEventListener('input', filterTransactions);
 }
 
@@ -693,6 +721,7 @@ async function fetchTransactionHistory() {
     }
 }
 
+/* ---------- Passive loop ---------- */
 
 function gameLoop() {
     requestAnimationFrame(gameLoop);
@@ -706,6 +735,8 @@ function gameLoop() {
         updateUI();
     }
 }
+
+/* ---------- Telegram profile ---------- */
 
 function getTWAUser() {
     const u = tg?.initDataUnsafe?.user;
@@ -730,6 +761,7 @@ async function syncProfile() {
     }
 }
 
+/* ---------- Games (solo + team lottery) ---------- */
 
 async function initGames() {
     await loadGameState();
@@ -780,7 +812,7 @@ async function loadGameState() {
             },
             recentWinners: [],
             yourBets: {
-                solo: new Decimal(0), 
+                solo: new Decimal(0),
                 team: null
             }
         };
@@ -838,50 +870,53 @@ async function saveGameState() {
 
 async function joinSoloLottery() {
     const betAmountInput = document.getElementById('solo-bet-amount');
-    const betAmount = new Decimal(betAmountInput.value || '0');
-    
+    const betAmount = parseBet(betAmountInput);
+
     if (betAmount.isZero() || betAmount.isNegative()) {
         showGameNotification('Please enter a valid bet amount', 'error');
         return;
     }
-    
+
     if (score.lessThan(betAmount)) {
         showGameNotification('Insufficient funds', 'error');
         return;
     }
-    
+
     try {
         score = score.minus(betAmount);
-        
+
         const actualBet = betAmount.times(1 - HOUSE_FEE);
         const fee = betAmount.minus(actualBet);
-        
+
         gameState.solo.pot = gameState.solo.pot.plus(actualBet);
-        
+
         const existingIndex = gameState.solo.participants.findIndex(p => p.userId === userId);
         if (existingIndex >= 0) {
-            gameState.solo.participants[existingIndex].bet = gameState.solo.participants[existingIndex].bet.plus(actualBet);
+            const prev = safeDecimal(gameState.solo.participants[existingIndex].bet);
+            const newBet = prev.plus(actualBet);
+            gameState.solo.participants[existingIndex].bet = newBet.toFixed(9);
         } else {
             gameState.solo.participants.push({
                 userId,
                 username: userName,
-                bet: actualBet,
+                bet: actualBet.toFixed(9),
                 percentage: 0
             });
         }
-        
-        gameState.yourBets.solo = gameState.yourBets.solo.plus(actualBet);
-        
+
+        const prevYourBet = safeDecimal(gameState.yourBets.solo);
+        gameState.yourBets.solo = prevYourBet.plus(actualBet);
+
         await saveGameState();
-        
+
         await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-        
+
         updateUI();
         updateGamesUI();
-        
+
         showGameNotification(`Joined solo lottery with ${actualBet.toFixed(9)} coins (1% fee applied)`, 'success');
         tg.HapticFeedback.notificationOccurred('success');
-        
+
     } catch (error) {
         console.error('Failed to join solo lottery:', error);
         showGameNotification('Failed to join lottery', 'error');
@@ -891,67 +926,71 @@ async function joinSoloLottery() {
 
 async function joinTeamLottery(teamId) {
     const betAmountInput = document.getElementById('team-bet-amount');
-    const betAmount = new Decimal(betAmountInput.value || '0');
-    
+    const betAmount = parseBet(betAmountInput);
+
     if (betAmount.isZero() || betAmount.isNegative()) {
         showGameNotification('Please enter a valid bet amount', 'error');
         return;
     }
-    
+
     if (score.lessThan(betAmount)) {
         showGameNotification('Insufficient funds', 'error');
         return;
     }
-    
+
     const team = gameState.team.teams.find(t => t.id === teamId);
     if (!team) {
         showGameNotification('Team not found', 'error');
         return;
     }
-    
+
     if (team.members.length >= 10) {
         showGameNotification('Team is full', 'error');
         return;
     }
-    
+
     if (gameState.yourBets.team && gameState.yourBets.team !== teamId) {
         showGameNotification('You are already in another team', 'error');
         return;
     }
-    
+
     try {
         score = score.minus(betAmount);
-        
+
         const actualBet = betAmount.times(1 - HOUSE_FEE);
         const fee = betAmount.minus(actualBet);
-        
+
         const memberIndex = team.members.findIndex(m => m.userId === userId);
         if (memberIndex >= 0) {
-            team.members[memberIndex].bet = team.members[memberIndex].bet.plus(actualBet);
+            const prev = safeDecimal(team.members[memberIndex].bet);
+            team.members[memberIndex].bet = prev.plus(actualBet).toFixed(9);
         } else {
             team.members.push({
                 userId,
                 username: userName,
-                bet: actualBet
+                bet: actualBet.toFixed(9)
             });
         }
-        
-        team.total = team.members.reduce((sum, member) => sum.plus(new Decimal(member.bet)), new Decimal(0));
-        
+
+        const total = team.members.reduce(
+            (sum, member) => sum.plus(safeDecimal(member.bet)),
+            new Decimal(0)
+        );
+        team.total = total.toFixed(9);
+
         gameState.team.pot = gameState.team.pot.plus(actualBet);
-        
         gameState.yourBets.team = teamId;
-        
+
         await saveGameState();
-        
+
         await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-        
+
         updateUI();
         updateGamesUI();
-        
+
         showGameNotification(`Joined team "${team.name}" with ${actualBet.toFixed(9)} coins`, 'success');
         tg.HapticFeedback.notificationOccurred('success');
-        
+
     } catch (error) {
         console.error('Failed to join team lottery:', error);
         showGameNotification('Failed to join team', 'error');
@@ -961,60 +1000,57 @@ async function joinTeamLottery(teamId) {
 
 async function createNewTeam() {
     const betAmountInput = document.getElementById('team-bet-amount');
-    const betAmount = new Decimal(betAmountInput.value || '0');
-    
+    const betAmount = parseBet(betAmountInput);
+
     if (betAmount.isZero() || betAmount.isNegative()) {
         showGameNotification('Please enter a valid bet amount', 'error');
         return;
     }
-    
+
     if (score.lessThan(betAmount)) {
         showGameNotification('Insufficient funds', 'error');
         return;
     }
-    
+
     const teamName = prompt('Enter team name (max 20 characters):');
     if (!teamName || teamName.trim().length === 0 || teamName.length > 20) {
         showGameNotification('Invalid team name', 'error');
         return;
     }
-    
+
     try {
         score = score.minus(betAmount);
-        
+
         const actualBet = betAmount.times(1 - HOUSE_FEE);
         const fee = betAmount.minus(actualBet);
-        
 
         const teamId = Date.now().toString();
         const newTeam = {
             id: teamId,
             name: teamName.trim(),
-            total: actualBet,
+            total: actualBet.toFixed(9),
             members: [{
                 userId,
                 username: userName,
-                bet: actualBet
+                bet: actualBet.toFixed(9)
             }],
             creatorId: userId
         };
-        
+
         gameState.team.teams.push(newTeam);
-        
         gameState.team.pot = gameState.team.pot.plus(actualBet);
-    
         gameState.yourBets.team = teamId;
-        
+
         await saveGameState();
-        
+
         await apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
-        
+
         updateUI();
         updateGamesUI();
-        
+
         showGameNotification(`Created team "${teamName}" with ${actualBet.toFixed(9)} coins`, 'success');
         tg.HapticFeedback.notificationOccurred('success');
-        
+
     } catch (error) {
         console.error('Failed to create team:', error);
         showGameNotification('Failed to create team', 'error');
@@ -1027,15 +1063,19 @@ async function drawSoloWinner() {
         await startNewSoloGame();
         return;
     }
-    
+
     const totalPot = gameState.solo.pot;
     gameState.solo.participants.forEach(participant => {
-        participant.percentage = (new Decimal(participant.bet).dividedBy(totalPot).times(100)).toDecimalPlaces(2);
+        participant.percentage = new Decimal(participant.bet)
+            .dividedBy(totalPot)
+            .times(100)
+            .toDecimalPlaces(2)
+            .toNumber();
     });
-    
+
     let random = Math.random() * 100;
     let winner = null;
-    
+
     for (const participant of gameState.solo.participants) {
         if (random <= participant.percentage) {
             winner = participant;
@@ -1043,39 +1083,38 @@ async function drawSoloWinner() {
         }
         random -= participant.percentage;
     }
-    
+
     if (!winner) {
         winner = gameState.solo.participants[Math.floor(Math.random() * gameState.solo.participants.length)];
     }
-    
+
     const prize = totalPot;
-    
+
     try {
         await apiRequest('/player/add-coins', 'POST', {
             userId: winner.userId,
             amount: prize.toFixed(9)
         });
-        
+
         gameState.recentWinners.unshift({
             game: 'solo',
             username: winner.username,
             amount: prize.toFixed(9),
             date: new Date().toISOString()
         });
-        
+
         if (gameState.recentWinners.length > 10) {
             gameState.recentWinners = gameState.recentWinners.slice(0, 10);
         }
-        
+
         if (winner.userId === userId) {
             showGameModal(`🎉 YOU WON!`, `${prize.toFixed(9)} coins!`, '💰');
             tg.HapticFeedback.notificationOccurred('success');
         }
-        
+
         await startNewSoloGame();
-        
         updateGamesUI();
-        
+
     } catch (error) {
         console.error('Failed to award solo prize:', error);
     }
@@ -1086,17 +1125,17 @@ async function drawTeamWinner() {
         await startNewTeamGame();
         return;
     }
-    
+
     const teamTotals = gameState.team.teams.map(team => ({
         team,
         total: new Decimal(team.total)
     }));
-    
+
     const totalPot = gameState.team.pot;
     let random = Math.random() * 100;
     let winningTeam = null;
     let accumulated = 0;
-    
+
     for (const teamData of teamTotals) {
         const percentage = teamData.total.dividedBy(totalPot).times(100);
         accumulated += percentage.toNumber();
@@ -1105,27 +1144,27 @@ async function drawTeamWinner() {
             break;
         }
     }
-    
+
     if (!winningTeam) {
         winningTeam = gameState.team.teams[Math.floor(Math.random() * gameState.team.teams.length)];
     }
-    
+
     const prize = totalPot;
-    
+
     try {
         for (const member of winningTeam.members) {
-            const share = new Decimal(member.bet).dividedBy(winningTeam.total).times(prize);
-            
+            const share = new Decimal(member.bet).dividedBy(new Decimal(winningTeam.total)).times(prize);
+
             await apiRequest('/player/add-coins', 'POST', {
                 userId: member.userId,
                 amount: share.toFixed(9)
             });
-            
+
             if (member.userId === userId) {
                 showGameModal(`🏆 TEAM WIN!`, `${share.toFixed(9)} coins!`, '👥');
                 tg.HapticFeedback.notificationOccurred('success');
             }
-            
+
             if (member.userId === winningTeam.creatorId) {
                 gameState.recentWinners.unshift({
                     game: 'team',
@@ -1135,42 +1174,39 @@ async function drawTeamWinner() {
                 });
             }
         }
-        
+
         if (gameState.recentWinners.length > 10) {
             gameState.recentWinners = gameState.recentWinners.slice(0, 10);
         }
-        
-        await startNewTeamGame();
 
+        await startNewTeamGame();
         updateGamesUI();
-        
+
     } catch (error) {
         console.error('Failed to award team prize:', error);
     }
 }
 
 function updateGamesUI() {
-
     document.getElementById('games-balance').textContent = score.toFixed(9);
-    
+
     document.getElementById('solo-pot').textContent = gameState.solo.pot.toFixed(9);
-    document.getElementById('your-solo-bet').textContent = 
-        typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed 
-            ? gameState.yourBets.solo.toFixed(9) 
-            : new Decimal(gameState.yourBets.solo || 0).toFixed(9);
-    
+    document.getElementById('your-solo-bet').textContent =
+        typeof gameState.yourBets.solo === 'object' && gameState.yourBets.solo.toFixed
+            ? gameState.yourBets.solo.toFixed(9)
+            : safeDecimal(gameState.yourBets.solo).toFixed(9);
+
     document.getElementById('solo-participants-count').textContent = gameState.solo.participants.length;
-    
 
     const soloParticipantsContainer = document.getElementById('solo-participants');
     soloParticipantsContainer.innerHTML = gameState.solo.participants
         .sort((a, b) => {
-            const betA = new Decimal(a.bet || 0);
-            const betB = new Decimal(b.bet || 0);
+            const betA = safeDecimal(a.bet);
+            const betB = safeDecimal(b.bet);
             return betB.minus(betA).toNumber();
         })
         .map(p => {
-            const bet = new Decimal(p.bet || 0);
+            const bet = safeDecimal(p.bet);
             return `
                 <div class="participant-item">
                     <span class="participant-name">${p.username || 'Anonymous'}</span>
@@ -1178,30 +1214,30 @@ function updateGamesUI() {
                 </div>
             `;
         }).join('');
-    
+
     document.getElementById('team-pot').textContent = gameState.team.pot.toFixed(9);
-    
-    const teamBetText = gameState.yourBets.team ? 
+
+    const teamBetText = gameState.yourBets.team ?
         (() => {
             const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
             if (!team) return '0';
-            const total = new Decimal(team.total || 0);
+            const total = safeDecimal(team.total);
             return total.toFixed(9);
         })() : '0';
-    
+
     document.getElementById('your-team-bet').textContent = teamBetText;
-    
+
     document.getElementById('active-teams-count').textContent = gameState.team.teams.length;
-    
+
     const teamsContainer = document.getElementById('teams-container');
     teamsContainer.innerHTML = gameState.team.teams
         .sort((a, b) => {
-            const totalA = new Decimal(a.total || 0);
-            const totalB = new Decimal(b.total || 0);
+            const totalA = safeDecimal(a.total);
+            const totalB = safeDecimal(b.total);
             return totalB.minus(totalA).toNumber();
         })
         .map(team => {
-            const total = new Decimal(team.total || 0);
+            const total = safeDecimal(team.total);
             return `
                 <div class="team-item" data-team-id="${team.id}">
                     <div>
@@ -1214,7 +1250,7 @@ function updateGamesUI() {
                 </div>
             `;
         }).join('');
-    
+
     const winnersContainer = document.getElementById('recent-winners');
     winnersContainer.innerHTML = gameState.recentWinners
         .map(winner => `
@@ -1235,7 +1271,6 @@ function startGameTimers() {
 
 function updateTimers() {
     const now = new Date();
-    
 
     if (gameState.solo.endTime && gameState.solo.isActive) {
         const soloTimeLeft = Math.max(0, gameState.solo.endTime - now);
@@ -1244,11 +1279,11 @@ function updateTimers() {
         } else {
             const soloMinutes = Math.floor(soloTimeLeft / 60000);
             const soloSeconds = Math.floor((soloTimeLeft % 60000) / 1000);
-            document.getElementById('solo-timer').textContent = 
+            document.getElementById('solo-timer').textContent =
                 `${soloMinutes.toString().padStart(2, '0')}:${soloSeconds.toString().padStart(2, '0')}`;
         }
     }
-    
+
     if (gameState.team.endTime && gameState.team.isActive) {
         const teamTimeLeft = Math.max(0, gameState.team.endTime - now);
         if (teamTimeLeft <= 0) {
@@ -1256,7 +1291,7 @@ function updateTimers() {
         } else {
             const teamMinutes = Math.floor(teamTimeLeft / 60000);
             const teamSeconds = Math.floor((teamTimeLeft % 60000) / 1000);
-            document.getElementById('team-timer').textContent = 
+            document.getElementById('team-timer').textContent =
                 `${teamMinutes.toString().padStart(2, '0')}:${teamSeconds.toString().padStart(2, '0')}`;
         }
     }
@@ -1267,36 +1302,32 @@ function setupGameEventListeners() {
         btn.addEventListener('click', (e) => {
             const multiplier = parseFloat(e.target.dataset.multiplier);
             const input = e.target.closest('.bet-amount-input').querySelector('input[type="number"]');
-            const currentValue = new Decimal(input.value || '0');
+            const currentValue = safeDecimal(input.value);
             const newValue = currentValue.times(multiplier);
             input.value = newValue.toFixed(9);
         });
     });
-    
-    document.getElementById('join-solo-btn').addEventListener('click', joinSoloLottery);
-    
-    document.getElementById('join-team-btn').addEventListener('click', () => {
 
-        const availableTeam = gameState.team.teams.find(team => team.members.length < 10);
+    document.getElementById('join-solo-btn').addEventListener('click', joinSoloLottery);
+
+    document.getElementById('join-team-btn').addEventListener('click', () => {
+        const availableTeam = gameState.team.teams.find(team => (team.members?.length || 0) < 10);
         if (availableTeam) {
             joinTeamLottery(availableTeam.id);
         } else {
             showGameNotification('No available teams. Create a new team!', 'error');
         }
     });
-    
+
     document.getElementById('create-team-btn').addEventListener('click', createNewTeam);
-    
+
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.team-item')) {
-            const teamItem = e.target.closest('.team-item');
-            const teamId = teamItem.dataset.teamId;
-            const team = gameState.team.teams.find(t => t.id === teamId);
-            if (team) {
-                if (confirm(`Join team "${team.name}"?`)) {
-                    joinTeamLottery(teamId);
-                }
-            }
+        const teamItem = e.target.closest('.team-item');
+        if (!teamItem) return;
+        const teamId = teamItem.dataset.teamId;
+        const team = gameState.team.teams.find(t => t.id === teamId);
+        if (team && confirm(`Join team "${team.name}"?`)) {
+            joinTeamLottery(teamId);
         }
     });
 }
@@ -1319,7 +1350,7 @@ function showGameNotification(message, type = 'info') {
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.animation = 'slideUp 0.3s ease-in';
         setTimeout(() => document.body.removeChild(notification), 300);
@@ -1337,13 +1368,13 @@ function showGameModal(title, message, emoji = '🎉') {
             <button class="close-modal">Claim Prize</button>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.querySelector('.close-modal').addEventListener('click', () => {
         document.body.removeChild(modal);
     });
-    
+
     setTimeout(() => {
         if (document.body.contains(modal)) {
             document.body.removeChild(modal);
@@ -1351,52 +1382,7 @@ function showGameModal(title, message, emoji = '🎉') {
     }, 5000);
 }
 
-
-
-
-initGames();
-
-
-// async function init() {
-//     let userId;
-
-//     tg.ready(() => {
-//         tg.expand();
-//         const u = tg?.initDataUnsafe?.user;
-//         userId = u?.id ?? Date.now();
-//         initGame();
-//     });
-
-//     tg.expand();
-
-//     const u = tg?.initDataUnsafe?.user;
-//     if (u?.id) userId = u.id;
-//     await initGames();
-//     await syncProfile();
-//     await initTasksSystem();
-
-//     updateTaskProgress('score');
-
-//     try {
-//         playerData = await apiRequest(`/player/${userId}`);
-//         score = new Decimal(playerData.score);
-//         clickValue = new Decimal(playerData.click_value);
-//         autoClickRate = new Decimal(playerData.auto_click_rate);
-
-//         generateUpgradesHTML();
-//         setupEventListeners();
-//         updateUI();
-//         setupTransactionSearch();
-
-//         lastFrameTime = Date.now();
-//         requestAnimationFrame(gameLoop);
-
-//         loadingOverlay.classList.remove('active');
-//     } catch (error) {
-//         console.error("Initialization failed:", error);
-//         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
-//     }
-// }
+/* ---------- Init + Event wiring ---------- */
 
 async function init() {
     tg.ready(() => {
@@ -1407,11 +1393,10 @@ async function init() {
     if (u?.id) userId = u.id;
 
     try {
-
         await syncProfile();
         await initGames();
         await initTasksSystem();
-        
+
         playerData = await apiRequest(`/player/${userId}`);
         score = new Decimal(playerData.score);
         clickValue = new Decimal(playerData.click_value);
@@ -1420,18 +1405,18 @@ async function init() {
         generateUpgradesHTML();
         setupEventListeners();
         updateUI();
-        updateGamesUI(); 
+        updateGamesUI();
         setupTransactionSearch();
 
         lastFrameTime = Date.now();
         requestAnimationFrame(gameLoop);
 
         loadingOverlay.classList.remove('active');
-        
+
         updateTaskProgress('score');
-        
+
     } catch (error) {
-        console.error("Initialization failed:", error);
+        console.error('Initialization failed:', error);
         loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
     }
 }
@@ -1450,18 +1435,15 @@ function setupEventListeners() {
             event.currentTarget.classList.add('active');
 
             if (currentNav.parentElement.id === 'upgrades') {
-                openUpgradeTab(event.currentTarget.dataset.tab);
+                const tabName = event.currentTarget.dataset.tab;
+                const upgradesPage = document.getElementById('upgrades');
+                upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
             } else if (currentNav.parentElement.id === 'leaderboard') {
                 fetchAndDisplayLeaderboard(event.currentTarget.dataset.sort);
             }
         };
     });
-
-    function openUpgradeTab(tabName) {
-        const upgradesPage = document.getElementById('upgrades');
-        upgradesPage.querySelectorAll('.upgrade-tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(tabName).classList.add('active');
-    }
 
     navButtons.leaderboard.addEventListener('click', () => {
         showPage('leaderboard');
@@ -1501,7 +1483,6 @@ function setupEventListeners() {
         coinImageEl.classList.add('bounce');
         updateUI();
     }, { passive: false });
-
 
     document.querySelectorAll('#tasks .tab-link').forEach(tab => {
         tab.addEventListener('click', (e) => {
