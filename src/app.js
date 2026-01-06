@@ -1018,6 +1018,45 @@ function updateGamesUI() {
   }
 }
 
+// ---------- Tasks / Achievements tab switching ----------
+function setupTaskTabs() {
+  const taskTabs = document.querySelectorAll('#tasks .tab-link');
+  const contents = {
+    'daily-tasks': document.getElementById('daily-tasks'),
+    achievements: document.getElementById('achievements'),
+  };
+
+  taskTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+
+      // toggle button active
+      taskTabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // toggle content
+      Object.values(contents).forEach(c => c && c.classList.remove('active'));
+      if (contents[target]) contents[target].classList.add('active');
+    });
+  });
+}
+
+// ---------- Leaderboard tab switching ----------
+function setupLeaderboardTabs() {
+  const sortButtons = document.querySelectorAll('#leaderboard .tab-link');
+
+  sortButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sortBy = btn.dataset.sort || 'score';
+
+      sortButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      fetchAndDisplayLeaderboard(sortBy);
+    });
+  });
+}
+
 function setupGameEventListeners() {
   document.querySelectorAll('.quick-bet-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1186,6 +1225,8 @@ async function init() {
     updateUI();
     updateGamesUI();
     setupTransactionSearch();
+    setupTaskTabs();
+    setupLeaderboardTabs();
 
     lastFrameTime = Date.now();
     requestAnimationFrame(gameLoop);
@@ -1205,6 +1246,7 @@ function setupEventListeners() {
       navButtons[key].onclick = () => showPage(key);
     }
   }
+
 
   navButtons.leaderboard?.addEventListener('click', () => {
     showPage('leaderboard');
