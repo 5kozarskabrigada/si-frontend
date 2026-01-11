@@ -23,7 +23,7 @@
   padding: 1.25rem 0.9rem 6.5rem 0.9rem;
 }
 
-/* Page title a bit less aggressive */
+
 .page-title {
   font-size: 1.5rem;
   margin-bottom: 1.25rem;
@@ -31,7 +31,7 @@
   color: var(--text-primary);
 }
 
-/* Generic tab buttons softer */
+
 .tab-link,
 .upgrade-tab-link,
 .leaderboard-tab-link,
@@ -53,7 +53,6 @@
   box-shadow: 0 0 8px var(--primary-accent-glow);
 }
 
-/* Cards slightly softer borders */
 .wallet-card,
 .task-item,
 .achievement-item,
@@ -122,7 +121,7 @@ body {
     }
 }
 
-/* Loading overlay */
+
 
 #loading-overlay {
     position: fixed;
@@ -162,7 +161,6 @@ body {
     }
 }
 
-/* Clicker stats */
 
 .stats-container {
     position: absolute;
@@ -239,7 +237,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* Tasks & achievements */
 
 .tasks-tab-content {
     display: none;
@@ -355,7 +352,6 @@ body {
     font-size: 0.8rem;
 }
 
-/* Search / transactions filter */
 
 .search-container {
     margin-bottom: 1rem;
@@ -380,8 +376,6 @@ body {
 .transaction-item.hidden {
     display: none;
 }
-
-/* Bottom nav */
 
 .nav-btn {
     display: flex;
@@ -432,7 +426,6 @@ body {
     background: rgba(142, 68, 173, 0.1);
 }
 
-/* Page titles */
 
 .page-title {
     display: flex;
@@ -450,7 +443,6 @@ body {
     color: var(--primary-accent);
 }
 
-/* Upgrades */
 
 .upgrade-nav {
     display: flex;
@@ -534,7 +526,7 @@ body {
 }
 
 
-/* Clicker container and image – simplified */
+
 #clicker.page.active {
   padding: 0;
   height: 100vh;
@@ -603,7 +595,6 @@ body {
     transform: scale(1.08);
 }
 
-/* Leaderboard */
 
 .leaderboard-nav {
     display: flex;
@@ -713,7 +704,7 @@ body {
     text-align: right;
 }
 
-/* Generic tab nav */
+
 
 .tab-nav {
     display: flex;
@@ -741,7 +732,7 @@ body {
     box-shadow: 0 0 10px var(--primary-accent-glow);
 }
 
-/* Responsive */
+
 
 @media (min-width: 600px) {
     :root {
@@ -764,7 +755,6 @@ body {
     }
 }
 
-/* Wallet / transactions */
 
 .wallet-card {
     background: var(--bg-surface-solid);
@@ -877,7 +867,7 @@ body {
     color: #e74c3c;
 }
 
-/* Games main page */
+
 
 #games.page {
     padding: 1rem;
@@ -1226,12 +1216,17 @@ body {
 
 .participants-container,
 .teams-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-height: 200px;
-    overflow-y: auto;
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 260px; 
+  overflow-y: auto;
+  padding-right: 4px;
 }
+
+
+
 
 .participant-item,
 .team-item {
@@ -1251,7 +1246,7 @@ body {
 
 
 
-/* Winners card (simple list under games) */
+
 
 .winners-card {
     background: var(--bg-surface-solid);
@@ -1298,7 +1293,6 @@ body {
     color: var(--text-secondary);
 }
 
-/* Extended Solo section: tabs + chat/top */
 
 .games-switcher {
     display: flex;
@@ -1440,8 +1434,6 @@ body {
     overflow-y: auto;
 }
 
-/* Winners chat style (solo) */
-
 .winners-chat-list {
     display: flex;
     flex-direction: column;
@@ -1481,7 +1473,6 @@ body {
     font-weight: 600;
 }
 
-/* Top list */
 
 .top-list {
     display: flex;
@@ -1507,7 +1498,6 @@ body {
     font-weight: 600;
 }
 
-/* Game results modal */
 
 .game-modal {
     display: none;
@@ -1582,7 +1572,6 @@ body {
     cursor: pointer;
 }
 
-/* Bottom nav bar */
 
 .bottom-nav {
     position: absolute;

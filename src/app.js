@@ -156,7 +156,6 @@ function parseBet(inputEl) {
   return new Decimal(raw);
 }
 
-/* ---------- Tasks / Achievements ---------- */
 
 async function initTasksSystem() {
   await loadTasksProgress();
@@ -453,7 +452,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-/* ---------- API + UI Core ---------- */
+
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
   try {
@@ -573,34 +572,38 @@ function generateUpgradesHTML() {
 
 async function purchaseUpgrade(upgradeId) {
   const btn = document.querySelector(`[data-upgrade-id="${upgradeId}"]`);
-  if (btn) {
-    btn.disabled = true;
-    const oldText = btn.textContent;
-    btn.textContent = 'Buying...';
-    try {
-      const result = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
-      if (!result.success && result.error) {
-        showNotification(result.error, 'error');
-      } else {
-        playerData = result.player;
-        score = new Decimal(playerData.score);
-        updateUI();
-        generateUpgradesHTML();
-        showNotification('Upgrade purchased!', 'success');
-      }
-    } catch (e) {
-      showNotification('Failed to buy upgrade', 'error');
-      console.error(e);
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = oldText;
-      }
+  if (!btn) return;
+
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Buying...';
+
+  try {
+    const result = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
+
+    if (!result.success) {
+      showNotification(result.error || 'Failed to buy upgrade', 'error');
+      return;
     }
+
+    playerData = result.player;
+    score = new Decimal(playerData.score);
+    clickValue = new Decimal(playerData.click_value);
+    autoClickRate = new Decimal(playerData.auto_click_rate);
+
+    updateUI();
+    generateUpgradesHTML();
+    showNotification('Upgrade purchased!', 'success');
+  } catch (e) {
+    console.error('Upgrade failed', e);
+    showNotification('Failed to buy upgrade', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldText;
   }
 }
 
-/* ---------- Leaderboard ---------- */
+
 
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
   const listContainer = document.getElementById('leaderboard-list');
@@ -620,7 +623,6 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
 
-      // avatar
       let pfpElement;
       if (player.profile_photo_url) {
         pfpElement = `<img src="${player.profile_photo_url}" class="pfp" alt="pfp">`;
@@ -706,7 +708,7 @@ function getColorForUser(username = '') {
   return userColors[index];
 }
 
-/* ---------- Wallet ---------- */
+
 
 async function handleSendCoins() {
   const sendBtn = document.getElementById('send-btn');
@@ -811,7 +813,6 @@ async function fetchTransactionHistory() {
   }
 }
 
-/* ---------- Games (solo + team) ---------- */
 
 async function initGames() {
   await loadGameState();
@@ -1061,7 +1062,7 @@ function updateGamesUI() {
   const soloCountEl = document.getElementById('solo-participants-count');
   if (soloCountEl) soloCountEl.textContent = gameState.solo.participants.length;
 
- const soloParticipantsContainer = document.getElementById('solo-participants');
+const soloParticipantsContainer = document.getElementById('solo-participants');
 if (soloParticipantsContainer) {
   soloParticipantsContainer.innerHTML = gameState.solo.participants
     .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
@@ -1099,7 +1100,6 @@ if (soloParticipantsContainer) {
     })
     .join('');
 
-  // make participants clickable -> open Telegram profile
   soloParticipantsContainer
     .querySelectorAll('.participant-item.lb-clickable')
     .forEach(row => {
@@ -1116,6 +1116,7 @@ if (soloParticipantsContainer) {
       });
     });
 }
+
 
 
   const teamPotEl = document.getElementById('team-pot');
@@ -1186,11 +1187,9 @@ if (winnersContainer) {
     })
     .join('');
     }
-  
 }
 
 
-// ---------- Tasks / Achievements tab switching ----------
 function setupTaskTabs() {
   const taskTabs = document.querySelectorAll('#tasks .tab-link');
   const contents = {
@@ -1211,7 +1210,7 @@ function setupTaskTabs() {
   });
 }
 
-// ---------- Leaderboard tab switching ----------
+
 function setupLeaderboardTabs() {
   const sortButtons = document.querySelectorAll('#leaderboard .tab-link');
 
@@ -1360,7 +1359,6 @@ function showGameModal(title, message, emoji) {
   setTimeout(close, 5000);
 }
 
-/* ---------- Telegram profile ---------- */
 
 function getTWAUser() {
   const u = tg?.initDataUnsafe?.user;
@@ -1385,7 +1383,6 @@ async function syncProfile() {
   }
 }
 
-/* ---------- Passive loop ---------- */
 
 function gameLoop() {
   requestAnimationFrame(gameLoop);
@@ -1400,7 +1397,6 @@ function gameLoop() {
   }
 }
 
-/* ---------- Init ---------- */
 
 async function init() {
   tg.ready();
