@@ -456,8 +456,15 @@ document.head.appendChild(style);
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
   try {
-    const options = { method, headers: { 'Content-Type': 'application/json' } };
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': String(userId),
+      },
+    };
     if (body) options.body = JSON.stringify(body);
+
     const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
@@ -469,6 +476,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     throw error;
   }
 }
+
 
 function showPage(pageId) {
   if (!pages[pageId] || !navButtons[pageId]) return;
