@@ -1429,9 +1429,35 @@ async function init() {
     loadingOverlay.classList.remove('active');
     updateTaskProgress('score');
   } catch (error) {
-    console.error('Initialization failed:', error);
-    loadingText.innerHTML = `Connection Error!<br><small>${error.message}</small>`;
-  }
+  console.error("Initialization failed:", error);
+
+  loadingText.innerHTML = `
+    Connection Error!<br>
+    <small>${error.message}</small><br><br>
+    <button id="retry-init">Retry</button>
+    <button id="open-tg">Open in Telegram</button>
+  `;
+
+  const retryBtn = document.getElementById("retry-init");
+  const openTgBtn = document.getElementById("open-tg");
+
+  retryBtn?.addEventListener("click", () => {
+
+    loadingText.innerHTML = "Reconnecting...";
+    init();
+  });
+
+  openTgBtn?.addEventListener("click", () => {
+    const link = "https://t.me/@SisiCCoinBot"; 
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      Telegram.WebApp.openTelegramLink(link);
+      Telegram.WebApp.minimize();
+    } else {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+  });
+}
+
 }
 
 function setupEventListeners() {
