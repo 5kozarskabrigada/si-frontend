@@ -1651,3 +1651,36 @@ body {
   font-size: 0.7rem;
   color: #aaaaaa;
 }
+
+
+#coinImage,
+.clicker-container,
+.coin-click-area,
+.game-card,
+.upgrade-item,
+.task-item,
+.achievement-item,
+.leaderboard-item,
+.transaction-item,
+.participant-item,
+.team-item,
+.winner-item,
+.nav-btn,
+.tab-link,
+.upgrade-tab-link,
+.leaderboard-tab-link,
+.game-switch-btn,
+.solo-tab-link,
+.claim-btn,
+.wallet-button,
+.join-btn,
+.team-btn,
+.quick-bet-btn,
+.create-team-btn,
+.close-modal {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
