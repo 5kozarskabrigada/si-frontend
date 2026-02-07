@@ -1765,4 +1765,10 @@ function setupEventListeners() {
   }, SYNC_INTERVAL);
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin panel loaded');
+    initAdminPanel();
+});
+
 init();
+
