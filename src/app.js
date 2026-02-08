@@ -531,7 +531,7 @@ function generateUpgradesHTML() {
             <p class="level">Level: <span id="${id}_level">0</span></p>
           </div>
           <div class="upgrade-action">
-            <button id="${id}_btn">
+            <button id="${id}_btn" onclick="purchaseUpgrade('${id}')">
               Cost: <span class="cost" id="${id}_cost">0</span>
             </button>
           </div>
@@ -539,58 +539,26 @@ function generateUpgradesHTML() {
       `;
     }
   }
-  for (const type in upgrades) {
-    for (const id in upgrades[type]) {
-      const btn = document.getElementById(`${id}_btn`);
-      if (btn) btn.onclick = () => purchaseUpgrade(id);
-    }
-  }
 }
-
-// async function purchaseUpgrade(upgradeId) {
-//   const btn = document.getElementById(`${upgradeId}_btn`);
-//   const originalText = btn.innerHTML;
-//   btn.disabled = true;
-
-//   updateTaskProgress('upgrades', 1);
-
-//   try {
-//     const { player } = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
-//     playerData = player;
-
-//     score = new Decimal(playerData.score);
-//     clickValue = new Decimal(playerData.click_value);
-//     autoClickRate = new Decimal(playerData.auto_click_rate);
-//     updateUI();
-
-//     tg.HapticFeedback.notificationOccurred('success');
-//     btn.innerHTML = 'Success!';
-//   } catch (error) {
-//     console.error('Upgrade failed:', error);
-//     tg.HapticFeedback.notificationOccurred('error');
-//     btn.innerHTML = 'Not Enough Coins';
-//   } finally {
-//     setTimeout(() => {
-//       btn.innerHTML = originalText;
-//       updateUI();
-//     }, 1000);
-//   }
-// }
 
 
 async function purchaseUpgrade(upgradeId) {
-  const btn = document.querySelector(`[data-upgrade-id="${upgradeId}"]`);
+  const btn = document.getElementById(`${upgradeId}_btn`);
   if (!btn) return;
 
   btn.disabled = true;
   const oldText = btn.textContent;
   btn.textContent = 'Buying...';
 
+  updateTaskProgress('upgrades', 1);
+
   try {
     const result = await apiRequest('/player/upgrade', 'POST', { userId, upgradeId });
 
     if (!result.success) {
-      showNotification(result.error || 'Failed to buy upgrade', 'error');
+      showGameNotification(result.error || 'Failed to buy upgrade', 'error');
+      btn.textContent = oldText;
+      btn.disabled = false;
       return;
     }
 
@@ -600,14 +568,15 @@ async function purchaseUpgrade(upgradeId) {
     autoClickRate = new Decimal(playerData.auto_click_rate);
 
     updateUI();
-    generateUpgradesHTML();
-    showNotification('Upgrade purchased!', 'success');
+    showGameNotification('Upgrade purchased!', 'success');
+    tg.HapticFeedback.notificationOccurred('success');
   } catch (e) {
     console.error('Upgrade failed', e);
-    showNotification('Failed to buy upgrade', 'error');
+    showGameNotification('Failed to buy upgrade', 'error');
+    tg.HapticFeedback.notificationOccurred('error');
   } finally {
-    btn.disabled = false;
     btn.textContent = oldText;
+    updateUI();
   }
 }
 
@@ -962,6 +931,8 @@ async function drawSoloLottery() {
           `+${result.prize} SISI`,
           '🎉'
         );
+      } else {
+        showGameNotification(`Winner: ${result.winner.username || 'Anonymous'} won ${result.prize}!`, 'success');
       }
     }
 
@@ -1142,13 +1113,17 @@ function updateGamesUI() {
 
         let avatarHtml = '';
         if (w.profile_photo_url) {
-          avatarHtml = `<img src="${w.profile_photo_url}" class="pfp" alt="pfp">`;
+          avatarHtml = `<img src="${w.profile_photo_url}" class="winner-pfp" alt="pfp">`;
+        } else {
+          const initial = displayName.charAt(0).toUpperCase();
+          const color = getColorForUser(w.username || displayName);
+          avatarHtml = `<div class="winner-pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
         }
 
         return `
           <div class="winner-item">
             ${avatarHtml}
-            <div>
+            <div class="winner-info">
               <div class="winner-name">${displayName}</div>
               ${usernameTag ? `<div class="winner-username">${usernameTag}</div>` : ''}
               <div class="winner-date">${dateStr}</div>
@@ -1212,11 +1187,11 @@ function renderSoloParticipants() {
 
     row.innerHTML = `
       ${avatarHTML}
-      <div class="user-details">
-        <div class="display-name">${displayName}</div>
-        ${p.username ? `<div class="username-tag">@${p.username}</div>` : ''}
+      <div class="participant-user-details">
+        <div class="participant-display-name">${displayName}</div>
+        ${p.username ? `<div class="participant-username-tag">@${p.username}</div>` : ''}
       </div>
-      <div class="score-value">
+      <div class="participant-score-value">
         ${betDec.toFixed(9)}
         <div class="win-chance">${percent}%</div>
       </div>
@@ -1254,148 +1229,6 @@ function renderGameControls() {
     joinBtn.textContent = 'Join game';
   }
 }
-
-
-
-
-// function updateGamesUI() {
-//   const balanceEl = document.getElementById('games-balance');
-//   if (balanceEl) balanceEl.textContent = score.toFixed(9);
-
-//   const soloPotEl = document.getElementById('solo-pot');
-//   if (soloPotEl) soloPotEl.textContent = gameState.solo.pot.toFixed(9);
-
-//   const yourSoloBetEl = document.getElementById('your-solo-bet');
-//   if (yourSoloBetEl) yourSoloBetEl.textContent = gameState.yourBets.solo.toFixed(9);
-
-//   const soloCountEl = document.getElementById('solo-participants-count');
-//   if (soloCountEl) soloCountEl.textContent = gameState.solo.participants.length;
-
-// const soloParticipantsContainer = document.getElementById('solo-participants');
-// if (soloParticipantsContainer) {
-//   soloParticipantsContainer.innerHTML = gameState.solo.participants
-//     .sort((a, b) => safeDecimal(b.bet).minus(safeDecimal(a.bet)).toNumber())
-//     .map(p => {
-//       const bet = safeDecimal(p.bet);
-
-//       const hasFirst = p.first_name && p.first_name.trim().length > 0;
-//       const hasLast = p.last_name && p.last_name.trim().length > 0;
-//       const displayName = hasFirst
-//         ? `${p.first_name}${hasLast ? ' ' + p.last_name : ''}`
-//         : (p.username || 'Anonymous');
-//       const usernameTag = p.username ? `@${p.username}` : '';
-
-//       let avatarHtml;
-//       if (p.profile_photo_url) {
-//         avatarHtml = `<img src="${p.profile_photo_url}" class="pfp" alt="pfp">`;
-//       } else {
-//         const initial = displayName.charAt(0).toUpperCase();
-//         const color = getColorForUser(p.username || displayName);
-//         avatarHtml = `<div class="pfp-placeholder" style="background-color: ${color};">${initial}</div>`;
-//       }
-
-//       const dataUsername = p.username ? `data-username="${p.username}"` : '';
-
-//       return `
-//         <div class="participant-item lb-clickable" ${dataUsername}>
-//           ${avatarHtml}
-//           <div class="participant-main">
-//             <div class="participant-name">${displayName}</div>
-//             ${usernameTag ? `<div class="participant-username">${usernameTag}</div>` : ''}
-//           </div>
-//           <span class="participant-bet">${bet.toFixed(9)}</span>
-//         </div>
-//       `;
-//     })
-//     .join('');
-
-//   soloParticipantsContainer
-//     .querySelectorAll('.participant-item.lb-clickable')
-//     .forEach(row => {
-//       row.addEventListener('click', () => {
-//         const uname = row.dataset.username;
-//         if (!uname) return;
-//         const link = `https://t.me/${uname}`;
-//         if (window.Telegram?.WebApp?.openTelegramLink) {
-//           Telegram.WebApp.openTelegramLink(link);
-//           Telegram.WebApp.minimize();
-//         } else {
-//           window.open(link, '_blank', 'noopener,noreferrer');
-//         }
-//       });
-//     });
-// }
-
-
-//   const teamPotEl = document.getElementById('team-pot');
-//   if (teamPotEl) teamPotEl.textContent = gameState.team.pot.toFixed(9);
-
-//   const yourTeamBetEl = document.getElementById('your-team-bet');
-//   const teamBetText = gameState.yourBets.team
-//     ? (() => {
-//         const team = gameState.team.teams.find(t => t.id === gameState.yourBets.team);
-//         if (!team) return '0';
-//         return safeDecimal(team.total).toFixed(9);
-//       })()
-//     : '0';
-//   if (yourTeamBetEl) yourTeamBetEl.textContent = teamBetText;
-
-//   const activeTeamsEl = document.getElementById('active-teams-count');
-//   if (activeTeamsEl) activeTeamsEl.textContent = gameState.team.teams.length;
-
-//   const teamsContainer = document.getElementById('teams-container');
-//   if (teamsContainer) {
-//     teamsContainer.innerHTML = gameState.team.teams
-//       .sort((a, b) => safeDecimal(b.total).minus(safeDecimal(a.total)).toNumber())
-//       .map(team => {
-//         const total = safeDecimal(team.total);
-//         const memberCount = (team.members || []).length;
-//         return `
-//           <div class="team-item" data-team-id="${team.id}">
-//             <div>
-//               <div class="team-name">${team.name || 'Unnamed Team'}</div>
-//               <div style="font-size: 0.8rem; color: var(--text-secondary);">${memberCount}/10 members</div>
-//             </div>
-//             <span class="team-total">${total.toFixed(9)}</span>
-//           </div>
-//         `;
-//       })
-//       .join('');
-//   }
-
-// const winnersContainer = document.getElementById('solo-winners-list');
-// if (winnersContainer) {
-//   winnersContainer.innerHTML = gameState.recentWinners
-//     .map(w => {
-//       const dateStr = new Date(w.date).toLocaleString();
-
-//       const hasFirst = w.first_name && w.first_name.trim().length > 0;
-//       const hasLast = w.last_name && w.last_name.trim().length > 0;
-//       const displayName = hasFirst
-//         ? `${w.first_name}${hasLast ? ' ' + w.last_name : ''}`
-//         : (w.username || 'Anonymous');
-//       const usernameTag = w.username ? `@${w.username}` : '';
-
-//       let avatarHtml = '';
-//       if (w.profile_photo_url) {
-//         avatarHtml = `<img src="${w.profile_photo_url}" class="pfp" alt="pfp">`;
-//       }
-
-//       return `
-//         <div class="winner-item">
-//           ${avatarHtml}
-//           <div>
-//             <div class="winner-name">${displayName}</div>
-//             ${usernameTag ? `<div class="winner-username">${usernameTag}</div>` : ''}
-//             <div class="winner-date">${dateStr}</div>
-//           </div>
-//           <div class="winner-amount">${safeDecimal(w.amount).toFixed(9)}</div>
-//         </div>
-//       `;
-//     })
-//     .join('');
-//     }
-// }
 
 
 function setupTaskTabs() {
@@ -1459,12 +1292,19 @@ function setupLeaderboardTabs() {
 function setupGameEventListeners() {
   document.querySelectorAll('.quick-bet-btn').forEach(btn => {
     btn.addEventListener('click', e => {
-      const multiplier = parseFloat(e.target.dataset.multiplier);
+      const multiplier = e.target.dataset.multiplier;
       const input = e.target.closest('.bet-amount-input')?.querySelector('input[type=number]');
-      if (!input || isNaN(multiplier)) return;
-      const currentValue = safeDecimal(input.value);
-      const newValue = currentValue.times(multiplier);
-      input.value = newValue.toFixed(9);
+      if (!input) return;
+
+      if (multiplier === 'all') {
+        input.value = score.toFixed(9);
+      } else {
+        const mult = parseFloat(multiplier);
+        if (isNaN(mult)) return;
+        const currentValue = safeDecimal(input.value);
+        const newValue = currentValue.times(mult);
+        input.value = newValue.toFixed(9);
+      }
     });
   });
 
@@ -1615,7 +1455,6 @@ async function init() {
     await initGames();
     await initTasksSystem();
 
-
     playerData = await apiRequest(`/player/${userId}`);
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
@@ -1625,47 +1464,46 @@ async function init() {
     setupEventListeners();
     updateUI();
     updateGamesUI();
+     
     setupTaskTabs();
     setupLeaderboardTabs();
     setupUpgradeTabs();
     setupTransactionSearch();
-
-
+    setupGameEventListeners();
+ 
     lastFrameTime = Date.now();
     requestAnimationFrame(gameLoop);
-
+ 
     loadingOverlay.classList.remove('active');
     updateTaskProgress('score');
   } catch (error) {
-  console.error("Initialization failed:", error);
+    console.error("Initialization failed:", error);
 
-  loadingText.innerHTML = `
-    Connection Error!<br>
-    <small>${error.message}</small><br><br>
-    <button id="retry-init">Retry</button>
-    <button id="open-tg">Open in Telegram</button>
-  `;
+    loadingText.innerHTML = `
+      Connection Error!<br>
+      <small>${error.message}</small><br><br>
+      <button id="retry-init">Retry</button>
+      <button id="open-tg">Open in Telegram</button>
+    `;
 
-  const retryBtn = document.getElementById("retry-init");
-  const openTgBtn = document.getElementById("open-tg");
+    const retryBtn = document.getElementById("retry-init");
+    const openTgBtn = document.getElementById("open-tg");
 
-  retryBtn?.addEventListener("click", () => {
+    retryBtn?.addEventListener("click", () => {
+      loadingText.innerHTML = "Reconnecting...";
+      init();
+    });
 
-    loadingText.innerHTML = "Reconnecting...";
-    init();
-  });
-
-  openTgBtn?.addEventListener("click", () => {
-    const link = "https://t.me/@SisiCCoinBot";
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      Telegram.WebApp.openTelegramLink(link);
-      Telegram.WebApp.minimize();
-    } else {
-      window.open(link, "_blank", "noopener,noreferrer");
-    }
-  });
-}
-
+    openTgBtn?.addEventListener("click", () => {
+      const link = "https://t.me/@SisiCCoinBot";
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        Telegram.WebApp.openTelegramLink(link);
+        Telegram.WebApp.minimize();
+      } else {
+        window.open(link, "_blank", "noopener,noreferrer");
+      }
+    });
+  }
 }
 
 
@@ -1701,26 +1539,19 @@ async function drawSolo() {
 
 
 function setupEventListeners() {
+
   for (const key in navButtons) {
     if (!navButtons[key]) continue;
-    if (key !== 'leaderboard') {
-      navButtons[key].onclick = () => showPage(key);
+    
+    if (key === 'leaderboard') {
+      navButtons[key].addEventListener('click', () => {
+        showPage(key);
+        fetchAndDisplayLeaderboard('score');
+      });
+    } else {
+      navButtons[key].addEventListener('click', () => showPage(key));
     }
   }
-
-    const withdrawSoloBtn = document.getElementById('withdraw-solo-btn');
-    if (withdrawSoloBtn) withdrawSoloBtn.addEventListener('click', withdrawSoloLottery);
-
-
-    const drawSoloBtn = document.getElementById('draw-solo-btn');
-    if (drawSoloBtn) {
-    drawSoloBtn.addEventListener('click', drawSoloLottery);
-    }
-
-  navButtons.leaderboard?.addEventListener('click', () => {
-    showPage('leaderboard');
-    fetchAndDisplayLeaderboard('score');
-  });
 
   coinImageEl.addEventListener('mousedown', () => {
     if (!playerData) return;
@@ -1750,9 +1581,47 @@ function setupEventListeners() {
     { passive: false },
   );
 
-  document.getElementById('send-btn')?.addEventListener('click', handleSendCoins);
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', handleSendCoins);
+  }
+
   setupTransactionSearch();
 
+  
+  const withdrawSoloBtn = document.getElementById('withdraw-solo-btn');
+  if (withdrawSoloBtn) {
+    withdrawSoloBtn.addEventListener('click', withdrawSoloLottery);
+  }
+
+  
+  const drawSoloBtn = document.getElementById('draw-solo-btn');
+  if (drawSoloBtn) {
+    drawSoloBtn.addEventListener('click', drawSoloLottery);
+  }
+
+  
+  const joinSoloBtn = document.getElementById('join-solo-btn');
+  if (joinSoloBtn) {
+    joinSoloBtn.addEventListener('click', joinSoloLottery);
+  }
+
+  
+  const joinTeamBtn = document.getElementById('join-team-btn');
+  if (joinTeamBtn) {
+    joinTeamBtn.addEventListener('click', () => {
+      const availableTeam = gameState.team.teams.find(team => (team.members || []).length < 10);
+      if (availableTeam) joinTeamLottery(availableTeam.id);
+      else showGameNotification('No available teams. Create a new team!', 'error');
+    });
+  }
+
+  const createTeamBtn = document.getElementById('create-team-btn');
+  if (createTeamBtn) {
+    createTeamBtn.addEventListener('click', createNewTeam);
+  }
+
+  
   setInterval(() => {
     cpsElement.textContent = `${clicksThisSecond} CPS`;
     clicksThisSecond = 0;
@@ -1771,4 +1640,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 init();
-
