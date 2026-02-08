@@ -136,6 +136,11 @@
             <div class="solo-label">Your bet</div>
             <div id="your-solo-bet" class="solo-your-bet">0.000000000</div>
           </div>
+          <div>
+            <div class="solo-label">Win chance</div>
+            <div id="solo-my-chance" class="solo-your-bet">0.00%</div>
+            </div>
+          </div>
         </div>
 
         <div class="solo-timer-row">
@@ -144,17 +149,16 @@
         </div>
 
         <div class="bet-amount-input">
-          <input
+        <input
             type="number"
             id="solo-bet-amount"
             placeholder="Enter amount"
-
             min="0.000000001"
             step="0.000000001"
-          />
-          <button class="quick-bet-btn" data-multiplier="0.5">1.5×</button>
-          <button class="quick-bet-btn" data-multiplier="2">2×</button>
-          <button class="quick-bet-btn" data-multiplier="10">10×</button>
+        />
+        <button class="quick-bet-btn" data-multiplier="0.5">1.5×</button>
+        <button class="quick-bet-btn" data-multiplier="2">2×</button>
+        <button class="quick-bet-btn" data-multiplier="all">All</button>
         </div>
 
         <button id="join-solo-btn" class="join-btn">Join Game</button>
