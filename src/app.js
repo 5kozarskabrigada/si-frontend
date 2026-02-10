@@ -1445,9 +1445,27 @@ async function init() {
     await initTasksSystem();
 
     playerData = await apiRequest(`/player/${userId}`);
+    
+    if (playerData.is_banned) {
+        loadingOverlay.classList.add('active');
+        loadingText.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-ban" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                <h2 style="margin-bottom: 1rem;">Account Banned</h2>
+                <p style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5;">Your account has been suspended for violating our terms of service.</p>
+                <div style="margin-top: 2rem; font-size: 0.8rem; color: #94a3b8;">
+                    ID: ${userId}
+                </div>
+            </div>
+        `;
+        return;
+    }
+
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
+
+    checkBroadcast();
 
     generateUpgradesHTML();
     setupEventListeners();
@@ -1492,6 +1510,22 @@ async function init() {
         window.open(link, "_blank", "noopener,noreferrer");
       }
     });
+  }
+}
+
+async function checkBroadcast() {
+  try {
+    const data = await apiRequest('/broadcast');
+    if (data && data.active && data.message) {
+      const type = data.type || 'info';
+      const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '🚫' : '📢');
+      const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
+      
+      // Use existing modal or create a specific one
+      showGameModal(title, data.message, icon, 'Got it');
+    }
+  } catch (e) {
+    console.error('Failed to check broadcast:', e);
   }
 }
 
