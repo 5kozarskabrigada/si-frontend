@@ -17,12 +17,9 @@
   color-scheme: dark;
 }
 
-
-
 .page {
   padding: 1.25rem 0.9rem 6.5rem 0.9rem;
 }
-
 
 .page-title {
   font-size: 1.5rem;
@@ -30,7 +27,6 @@
   background: none;
   color: var(--text-primary);
 }
-
 
 .tab-link,
 .upgrade-tab-link,
@@ -63,7 +59,6 @@
   border-color: rgba(255, 255, 255, 0.04);
   box-shadow: none;
 }
-
 
 * {
     box-sizing: border-box;
@@ -110,18 +105,14 @@ body {
     display: flex;
 }
 
-
 @keyframes fadeIn {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
 }
-
-
 
 #loading-overlay {
     position: fixed;
@@ -161,7 +152,6 @@ body {
     }
 }
 
-
 .stats-container {
     position: absolute;
     top: 2%;
@@ -179,8 +169,6 @@ body {
     z-index: 10;
     pointer-events: none;
 }
-
-
 
 .stats-header {
     text-align: center;
@@ -236,7 +224,6 @@ body {
     font-weight: 600;
     font-size: 0.9rem;
 }
-
 
 .tasks-tab-content {
     display: none;
@@ -352,7 +339,6 @@ body {
     font-size: 0.8rem;
 }
 
-
 .search-container {
     margin-bottom: 1rem;
 }
@@ -426,7 +412,6 @@ body {
     background: rgba(142, 68, 173, 0.1);
 }
 
-
 .page-title {
     display: flex;
     align-items: center;
@@ -442,7 +427,6 @@ body {
     font-size: 1.5rem;
     color: var(--primary-accent);
 }
-
 
 .upgrade-nav {
     display: flex;
@@ -525,8 +509,6 @@ body {
     font-size: 0.9rem;
 }
 
-
-
 #clicker.page.active {
   padding: 0;
   height: 100vh;
@@ -556,11 +538,6 @@ body {
   pointer-events: auto;
 }
 
-
-
-
-
-
 #coinImage.bounce {
     animation: gentleBounce 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
@@ -569,23 +546,18 @@ body {
     0% {
         transform: scale(1);
     }
-
     20% {
         transform: scale(1.08);
     }
-
     40% {
         transform: scale(0.98);
     }
-
     60% {
         transform: scale(1.05);
     }
-
     80% {
         transform: scale(0.995);
     }
-
     100% {
         transform: scale(1);
     }
@@ -594,7 +566,6 @@ body {
 #coinImage.bump {
     transform: scale(1.08);
 }
-
 
 .leaderboard-nav {
     display: flex;
@@ -704,8 +675,6 @@ body {
     text-align: right;
 }
 
-
-
 .tab-nav {
     display: flex;
     justify-content: center;
@@ -732,29 +701,23 @@ body {
     box-shadow: 0 0 10px var(--primary-accent-glow);
 }
 
-
-
 @media (min-width: 600px) {
     :root {
         font-size: 16px;
     }
-
     .page {
         max-width: 500px;
         margin-left: auto;
         margin-right: auto;
     }
-
     .leaderboard-item {
         gap: 1.25rem;
         padding: 0.75rem 1.5rem;
     }
-
     .leaderboard-item .username {
         font-weight: 600;
     }
 }
-
 
 .wallet-card {
     background: var(--bg-surface-solid);
@@ -867,8 +830,6 @@ body {
     color: #e74c3c;
 }
 
-
-
 #games.page {
     padding: 1rem;
     background: var(--bg-primary);
@@ -904,7 +865,6 @@ body {
   border-color: var(--accent-green);
   background: rgba(46, 204, 113, 0.06);
 }
-
 
 .balance-label {
     display: block;
@@ -963,8 +923,6 @@ body {
   background: var(--accent-red);
 }
 
-
-
 .game-stats {
     display: flex;
     flex-direction: column;
@@ -1002,10 +960,6 @@ body {
     font-family: monospace;
     font-size: 1rem;
 }
-
-
-
-
 
 .team-size {
     color: #3498db !important;
@@ -1078,6 +1032,8 @@ body {
     background: #333;
     cursor: not-allowed;
     opacity: 0.6;
+    box-shadow: none;
+    transform: none;
 }
 
 #join-solo-btn {
@@ -1103,7 +1059,6 @@ body {
   box-shadow: 0 4px 12px rgba(125, 60, 152, 0.4);
 }
 
-
 #withdraw-solo-btn {
   margin-top: 0.5rem;
   background: linear-gradient(135deg, var(--accent-red), #ff7676);
@@ -1123,7 +1078,6 @@ body {
   box-shadow: 0 10px 22px rgba(231, 76, 60, 0.4);
   transform: translateY(-2px);
 }
-
 
 .team-btn {
   background: linear-gradient(135deg, var(--accent-blue), #5dade2);
@@ -1149,8 +1103,6 @@ body {
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 }
 
-
-#join-solo-btn:disabled,
 #withdraw-solo-btn:disabled,
 .team-btn:disabled {
   opacity: 0.6;
@@ -1158,8 +1110,6 @@ body {
   box-shadow: none;
   transform: none;
 }
-
-
 
 .participant-item {
   background: linear-gradient(90deg, rgba(125,60,152,0.15), transparent);
@@ -1174,15 +1124,12 @@ body {
 .participant-bet {
   color: var(--accent-green);
     font-weight: 600;
-
 }
 
 .team-total {
   color: var(--accent-blue);
     font-weight: 600;
-
 }
-
 
 .create-team-btn {
     width: 100%;
@@ -1225,9 +1172,6 @@ body {
   padding-right: 4px;
 }
 
-
-
-
 .participant-item,
 .team-item {
     display: flex;
@@ -1243,10 +1187,6 @@ body {
     font-weight: 500;
     color: var(--text-primary);
 }
-
-
-
-
 
 .winners-card {
     background: var(--bg-surface-solid);
@@ -1293,13 +1233,11 @@ body {
     color: var(--text-secondary);
 }
 
-
 .games-switcher {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1rem;
 }
-
 
 .game-switch-btn {
   flex: 1;
@@ -1328,7 +1266,6 @@ body {
   box-shadow: 0 0 10px rgba(52, 152, 219, 0.45);
 }
 
-
 #withdraw-solo-btn {
   background: var(--accent-red);
 }
@@ -1339,7 +1276,6 @@ body {
 .game-page {
     display: none;
 }
-
 
 .game-page.active {
     display: block;
@@ -1473,7 +1409,6 @@ body {
     font-weight: 600;
 }
 
-
 .top-list {
     display: flex;
     flex-direction: column;
@@ -1497,7 +1432,6 @@ body {
 .top-amount {
     font-weight: 600;
 }
-
 
 .game-modal {
     display: none;
@@ -1572,7 +1506,6 @@ body {
     cursor: pointer;
 }
 
-
 .bottom-nav {
     position: absolute;
     bottom: 0;
@@ -1589,7 +1522,6 @@ body {
     z-index: 100;
 }
 
-
 .lb-username-link {
   color: var(--accent-blue);
   text-decoration: none;
@@ -1604,7 +1536,6 @@ body {
   color: var(--text-secondary);
   cursor: default;
 }
-
 
 .game-participant-avatar {
   width: 28px;
@@ -1652,12 +1583,6 @@ body {
   color: #aaaaaa;
 }
 
-/* ========================================
-   SOLO LOTTERY UI IMPROVEMENTS
-   Add these styles to your existing styles.css
-   ======================================== */
-
-/* Smaller profile pictures in participants list */
 .game-participant-avatar,
 .game-participant-avatar-placeholder {
   width: 24px !important;
@@ -1674,7 +1599,6 @@ body {
   object-fit: cover;
 }
 
-/* Better participant row layout */
 .solo-participant-row {
   display: flex;
   align-items: center;
@@ -1726,7 +1650,6 @@ body {
   margin-top: 2px;
 }
 
-/* Scrollable participants container */
 .participants-container {
   margin-top: 0.5rem;
   display: flex;
@@ -1737,7 +1660,6 @@ body {
   padding-right: 4px;
 }
 
-/* Winners tab improvements */
 .winner-item {
   display: flex;
   align-items: center;
@@ -1808,8 +1730,6 @@ body {
   color: var(--primary-accent);
   font-size: 1.1rem;
 }
-
-
 
 #coinImage {
   -webkit-user-select: none;

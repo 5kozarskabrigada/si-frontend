@@ -140,8 +140,6 @@ let gameState = {
   },
 };
 
-
-
 function safeDecimal(value) {
   try {
     return new Decimal(value || 0);
@@ -155,7 +153,6 @@ function parseBet(inputEl) {
   if (!raw || isNaN(Number(raw))) return new Decimal(0);
   return new Decimal(raw);
 }
-
 
 async function initTasksSystem() {
   await loadTasksProgress();
@@ -452,8 +449,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-
-
 async function apiRequest(endpoint, method = 'GET', body = null) {
   try {
     const options = {
@@ -476,7 +471,6 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     throw error;
   }
 }
-
 
 function showPage(pageId) {
   if (!pages[pageId] || !navButtons[pageId]) return;
@@ -541,7 +535,6 @@ function generateUpgradesHTML() {
   }
 }
 
-
 async function purchaseUpgrade(upgradeId) {
   const btn = document.getElementById(`${upgradeId}_btn`);
   if (!btn) return;
@@ -580,8 +573,6 @@ async function purchaseUpgrade(upgradeId) {
   }
 }
 
-
-
 async function fetchAndDisplayLeaderboard(sortBy = 'score') {
   const listContainer = document.getElementById('leaderboard-list');
   listContainer.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
@@ -618,7 +609,6 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         const hasUsername = Boolean(player.username);
         const displayUsername = hasUsername ? `@${player.username}` : '';
 
-
       let displayValue;
       switch (sortBy) {
         case 'click_value':
@@ -641,7 +631,6 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
         <div class="score-value">${displayValue}</div>
         `;
 
-
       if (hasUsername) {
         item.dataset.username = player.username;
         item.classList.add('lb-clickable');
@@ -661,7 +650,6 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
           Telegram.WebApp.openTelegramLink(`https://t.me/${uname}`);
           Telegram.WebApp.minimize();
         } else {
-
           window.open(link, '_blank', 'noopener,noreferrer');
         }
       });
@@ -671,8 +659,6 @@ async function fetchAndDisplayLeaderboard(sortBy = 'score') {
     console.error('Failed to load leaderboard:', error);
   }
 }
-
-
 
 const userColors = ['#4A90E2', '#50E3C2', '#B8E986', '#F8E71C', '#F5A623', '#BD10E0', '#D0021B'];
 
@@ -684,8 +670,6 @@ function getColorForUser(username = '') {
   const index = Math.abs(hash % userColors.length);
   return userColors[index];
 }
-
-
 
 async function handleSendCoins() {
   const sendBtn = document.getElementById('send-btn');
@@ -789,7 +773,6 @@ async function fetchTransactionHistory() {
     historyList.innerHTML = '<p class="error">Could not load history.</p>';
   }
 }
-
 
 async function initGames() {
   await loadGameState();
@@ -964,8 +947,6 @@ async function withdrawSoloLottery() {
   }
 }
 
-
-
 async function joinTeamLottery(teamId) {
   const betAmountInput = document.getElementById('team-bet-amount');
   const betAmount = parseBet(betAmountInput);
@@ -1030,7 +1011,6 @@ async function createNewTeam() {
   }
 }
 
-
 function renderMyWinChance() {
   const el = document.getElementById('solo-my-chance');
   if (!el || !gameState.solo) return;
@@ -1060,7 +1040,7 @@ function updateGamesUI() {
 
   renderSoloParticipants();
   renderGameControls();
-    renderMyWinChance(); 
+    renderMyWinChance();
 
   const teamPotEl = document.getElementById('team-pot');
   if (teamPotEl) teamPotEl.textContent = safeDecimal(gameState.team.pot).toFixed(9);
@@ -1135,7 +1115,6 @@ function updateGamesUI() {
       .join('');
   }
 }
-
 
 function userSoloBet() {
   const me = (gameState.solo.participants || []).find(
@@ -1217,7 +1196,6 @@ function renderSoloParticipants() {
   });
 }
 
-
 function renderGameControls() {
   const joinBtn = document.getElementById('join-solo-btn');
   if (!joinBtn) return;
@@ -1229,7 +1207,6 @@ function renderGameControls() {
     joinBtn.textContent = 'Join game';
   }
 }
-
 
 function setupTaskTabs() {
   const taskTabs = document.querySelectorAll('#tasks .tab-link');
@@ -1250,7 +1227,6 @@ function setupTaskTabs() {
     });
   });
 }
-
 
 function setupLeaderboardTabs() {
   const sortButtons = document.querySelectorAll('#leaderboard .tab-link');
@@ -1287,7 +1263,6 @@ function setupLeaderboardTabs() {
         });
     });
     }
-
 
 function setupGameEventListeners() {
   document.querySelectorAll('.quick-bet-btn').forEach(btn => {
@@ -1407,7 +1382,6 @@ function showGameModal(title, message, emoji) {
   setTimeout(close, 5000);
 }
 
-
 function getTWAUser() {
   const u = tg?.initDataUnsafe?.user;
   if (!u) return null;
@@ -1431,7 +1405,6 @@ async function syncProfile() {
   }
 }
 
-
 function gameLoop() {
   requestAnimationFrame(gameLoop);
   const now = Date.now();
@@ -1445,12 +1418,28 @@ function gameLoop() {
   }
 }
 
-
 async function init() {
   tg.ready();
   tg.expand();
 
   try {
+    const maintenance = await fetch(`${BACKEND_URL}/maintenance-status`).then(r => r.json()).catch(() => ({ maintenance_mode: false }));
+    
+    if (maintenance.maintenance_mode) {
+      loadingOverlay.classList.add('active');
+      loadingText.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <i class="fas fa-tools" style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;"></i>
+          <h2 style="margin-bottom: 1rem;">Under Maintenance</h2>
+          <p style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.5;">${maintenance.message}</p>
+          <div style="margin-top: 2rem;">
+            <button onclick="window.location.reload()" style="background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;">Check Again</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     await syncProfile();
     await initGames();
     await initTasksSystem();
@@ -1506,7 +1495,6 @@ async function init() {
   }
 }
 
-
 async function drawSolo() {
   try {
     const result = await apiRequest('/games/draw-solo', 'POST', {});
@@ -1516,14 +1504,12 @@ async function drawSolo() {
       return;
     }
 
-
     const updatedPlayer = await apiRequest(`/player/${userId}`);
     playerData = updatedPlayer;
     score = new Decimal(playerData.score);
     autoClickRate = new Decimal(playerData.auto_click_rate);
     clickValue = new Decimal(playerData.click_value);
     updateUI();
-
 
     await loadGameState();
 
@@ -1537,9 +1523,7 @@ async function drawSolo() {
   }
 }
 
-
 function setupEventListeners() {
-
   for (const key in navButtons) {
     if (!navButtons[key]) continue;
     
@@ -1588,25 +1572,21 @@ function setupEventListeners() {
 
   setupTransactionSearch();
 
-  
   const withdrawSoloBtn = document.getElementById('withdraw-solo-btn');
   if (withdrawSoloBtn) {
     withdrawSoloBtn.addEventListener('click', withdrawSoloLottery);
   }
 
-  
   const drawSoloBtn = document.getElementById('draw-solo-btn');
   if (drawSoloBtn) {
     drawSoloBtn.addEventListener('click', drawSoloLottery);
   }
 
-  
   const joinSoloBtn = document.getElementById('join-solo-btn');
   if (joinSoloBtn) {
     joinSoloBtn.addEventListener('click', joinSoloLottery);
   }
 
-  
   const joinTeamBtn = document.getElementById('join-team-btn');
   if (joinTeamBtn) {
     joinTeamBtn.addEventListener('click', () => {
@@ -1621,7 +1601,6 @@ function setupEventListeners() {
     createTeamBtn.addEventListener('click', createNewTeam);
   }
 
-  
   setInterval(() => {
     cpsElement.textContent = `${clicksThisSecond} CPS`;
     clicksThisSecond = 0;
