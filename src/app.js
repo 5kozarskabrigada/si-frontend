@@ -1441,7 +1441,7 @@ function showGameNotification(message, type = 'info') {
   }, 3000);
 }
 
-function showGameModal(title, message, emoji) {
+function showGameModal(title, message, emoji, buttonText = 'Claim Prize', onClose = null) {
   const modal = document.createElement('div');
   modal.className = 'game-modal active';
   modal.innerHTML = `
@@ -1449,16 +1449,22 @@ function showGameModal(title, message, emoji) {
       <div class="win-animation">${emoji}</div>
       <h3 class="modal-title">${title}</h3>
       <div class="modal-prize">${message}</div>
-      <button class="close-modal">Claim Prize</button>
+      <button class="close-modal">${buttonText}</button>
     </div>
   `;
   document.body.appendChild(modal);
 
-  const close = () => {
+  const close = (manual = false) => {
     if (document.body.contains(modal)) document.body.removeChild(modal);
+    if (manual && onClose) onClose();
   };
-  modal.querySelector('.close-modal').addEventListener('click', close);
-  setTimeout(close, 5000);
+
+  modal.querySelector('.close-modal').addEventListener('click', () => close(true));
+  
+  // Only auto-close if no callback is provided (standard behavior for prizes/level ups)
+  if (!onClose) {
+    setTimeout(() => close(false), 5000);
+  }
 }
 
 function getTWAUser() {
@@ -1596,12 +1602,19 @@ async function checkBroadcast() {
   try {
     const data = await apiRequest('/broadcast');
     if (data && data.active && data.message) {
-      const type = data.type || 'info';
-      const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '🚫' : '📢');
-      const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
-      
-      // Use existing modal or create a specific one
-      showGameModal(title, data.message, icon, 'Got it');
+      const broadcastId = data.id || '0';
+      const viewedId = localStorage.getItem('viewed_broadcast_id');
+
+      // Only show if the message ID is different from what we've already viewed
+      if (broadcastId !== viewedId) {
+        const type = data.type || 'info';
+        const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '🚫' : '📢');
+        const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
+        
+        showGameModal(title, data.message, icon, 'Got it', () => {
+          localStorage.setItem('viewed_broadcast_id', broadcastId);
+        });
+      }
     }
   } catch (e) {
     console.error('Failed to check broadcast:', e);
