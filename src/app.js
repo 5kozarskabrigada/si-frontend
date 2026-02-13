@@ -25,44 +25,22 @@ const pages = {
 
 const navButtons = {
   clicker: document.getElementById('nav-clicker'),
-  upgrades: document.getElementById('folder-upgrades'),
-  tasks: document.getElementById('folder-tasks'),
-  leaderboard: document.getElementById('folder-tasks'), // Highlight tasks folder for leaderboard
-  skins: document.getElementById('folder-skins'),
-  transactions: document.getElementById('folder-wallet'),
+  upgrades: document.getElementById('nav-folder'),
+  tasks: document.getElementById('nav-folder'),
+  leaderboard: document.getElementById('nav-folder'),
+  skins: document.getElementById('nav-folder'),
+  transactions: document.getElementById('nav-folder'),
   games: document.getElementById('nav-games'),
 };
 
-const folders = {
-  upgrades: {
-    title: 'Upgrades',
-    items: [
-      { id: 'clickUpgrades', label: 'Per Click', icon: '👆', page: 'upgrades', tab: 'clickUpgrades' },
-      { id: 'autoUpgrades', label: 'Per Second', icon: '⚡', page: 'upgrades', tab: 'autoUpgrades' },
-      { id: 'offlineUpgrades', label: 'Offline', icon: '💤', page: 'upgrades', tab: 'offlineUpgrades' },
-    ]
-  },
-  tasks: {
-    title: 'Tasks & Social',
-    items: [
-      { id: 'daily-tasks', label: 'Daily Tasks', icon: '📅', page: 'tasks', tab: 'daily-tasks' },
-      { id: 'achievements', label: 'Achievements', icon: '🎖️', page: 'tasks', tab: 'achievements' },
-      { id: 'leaderboard', label: 'Top Players', icon: '🏆', page: 'leaderboard' },
-    ]
-  },
-  wallet: {
-    title: 'Wallet',
-    items: [
-      { id: 'wallet-send', label: 'Send Coins', icon: '💸', page: 'transactions' },
-      { id: 'wallet-history', label: 'History', icon: '📜', page: 'transactions' },
-    ]
-  },
-  skins: {
-    title: 'Customization',
-    items: [
-      { id: 'skins-main', label: 'Skins', icon: '🎨', page: 'skins' },
-    ]
-  }
+const mainFolder = {
+  title: 'Menu',
+  items: [
+    { id: 'nav-upgrades', label: 'Upgrades', icon: '🚀', page: 'upgrades' },
+    { id: 'nav-tasks', label: 'Tasks', icon: '📋', page: 'tasks' },
+    { id: 'nav-wallet', label: 'Wallet', icon: '💰', page: 'transactions' },
+    { id: 'nav-skins', label: 'Skins', icon: '👕', page: 'skins' },
+  ]
 };
 
 let activeFolder = null;
@@ -550,26 +528,23 @@ function showPage(pageId, tabId = null) {
   closeFolder();
 }
 
-function toggleFolder(folderId) {
-    if (activeFolder === folderId) {
+function toggleFolder() {
+    if (activeFolder) {
         closeFolder();
     } else {
-        openFolder(folderId);
+        openFolder();
     }
 }
 
-function openFolder(folderId) {
-    activeFolder = folderId;
-    const folder = folders[folderId];
-    if (!folder) return;
-
+function openFolder() {
+    activeFolder = true;
     const overlay = document.getElementById('nav-menu-overlay');
     const submenu = document.getElementById('nav-submenu');
     
     submenu.innerHTML = `
-        <div style="padding: 0.5rem 1rem; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">${folder.title}</div>
-        ${folder.items.map(item => `
-            <div class="submenu-item" onclick="showPage('${item.page}', '${item.tab || ''}')">
+        <div style="padding: 0.5rem 1rem; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">${mainFolder.title}</div>
+        ${mainFolder.items.map(item => `
+            <div class="submenu-item" onclick="showPage('${item.page}')">
                 <span class="submenu-icon">${item.icon}</span>
                 <span class="submenu-text">${item.label}</span>
                 <span class="submenu-arrow">➜</span>
@@ -578,8 +553,6 @@ function openFolder(folderId) {
     `;
 
     overlay.classList.add('active');
-    
-    // Feedback
     tg.HapticFeedback.impactOccurred('medium');
 }
 
@@ -1667,14 +1640,7 @@ function setupEventListeners() {
   // Direct nav buttons
   document.getElementById('nav-clicker')?.addEventListener('click', () => showPage('clicker'));
   document.getElementById('nav-games')?.addEventListener('click', () => showPage('games'));
-
-  // Folder nav buttons
-  document.querySelectorAll('.folder-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const folderId = btn.dataset.folder;
-        toggleFolder(folderId);
-    });
-  });
+  document.getElementById('nav-folder')?.addEventListener('click', () => toggleFolder());
 
   // Close folder on overlay click
   document.getElementById('nav-menu-overlay')?.addEventListener('click', (e) => {

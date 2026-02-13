@@ -1516,7 +1516,7 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
     z-index: 1000;
