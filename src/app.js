@@ -25,13 +25,47 @@ const pages = {
 
 const navButtons = {
   clicker: document.getElementById('nav-clicker'),
-  upgrades: document.getElementById('nav-upgrades'),
-  tasks: document.getElementById('nav-tasks'),
-  leaderboard: document.getElementById('nav-leaderboard'),
-  skins: document.getElementById('nav-skins'),
-  transactions: document.getElementById('nav-transactions'),
+  upgrades: document.getElementById('folder-upgrades'),
+  tasks: document.getElementById('folder-tasks'),
+  leaderboard: document.getElementById('folder-tasks'), // Highlight tasks folder for leaderboard
+  skins: document.getElementById('folder-skins'),
+  transactions: document.getElementById('folder-wallet'),
   games: document.getElementById('nav-games'),
 };
+
+const folders = {
+  upgrades: {
+    title: 'Upgrades',
+    items: [
+      { id: 'clickUpgrades', label: 'Per Click', icon: '👆', page: 'upgrades', tab: 'clickUpgrades' },
+      { id: 'autoUpgrades', label: 'Per Second', icon: '⚡', page: 'upgrades', tab: 'autoUpgrades' },
+      { id: 'offlineUpgrades', label: 'Offline', icon: '💤', page: 'upgrades', tab: 'offlineUpgrades' },
+    ]
+  },
+  tasks: {
+    title: 'Tasks & Social',
+    items: [
+      { id: 'daily-tasks', label: 'Daily Tasks', icon: '📅', page: 'tasks', tab: 'daily-tasks' },
+      { id: 'achievements', label: 'Achievements', icon: '🎖️', page: 'tasks', tab: 'achievements' },
+      { id: 'leaderboard', label: 'Top Players', icon: '🏆', page: 'leaderboard' },
+    ]
+  },
+  wallet: {
+    title: 'Wallet',
+    items: [
+      { id: 'wallet-send', label: 'Send Coins', icon: '💸', page: 'transactions' },
+      { id: 'wallet-history', label: 'History', icon: '📜', page: 'transactions' },
+    ]
+  },
+  skins: {
+    title: 'Customization',
+    items: [
+      { id: 'skins-main', label: 'Skins', icon: '🎨', page: 'skins' },
+    ]
+  }
+};
+
+let activeFolder = null;
 
 const userInfo = {
   user_id: tg.initDataUnsafe?.user?.id,
@@ -472,19 +506,91 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   }
 }
 
-function showPage(pageId) {
-  if (!pages[pageId] || !navButtons[pageId]) return;
+function showPage(pageId, tabId = null) {
+  const page = pages[pageId];
+  const btn = navButtons[pageId];
+  
+  if (!page) return;
 
   Object.values(pages).forEach(p => {
     if (p) p.classList.remove('active');
   });
+  page.classList.add('active');
 
-  pages[pageId].classList.add('active');
   Object.values(navButtons).forEach(b => {
-    if (b) b.classList.remove('active');
+    if (b) {
+        b.classList.remove('active');
+        b.classList.remove('active-folder');
+    }
   });
-  navButtons[pageId].classList.add('active');
+
+  if (btn) {
+    btn.classList.add('active');
+    if (btn.classList.contains('folder-btn')) {
+        btn.classList.add('active-folder');
+    }
+  }
+
+  // Handle specific page logic
+  if (pageId === 'leaderboard') {
+    fetchAndDisplayLeaderboard('score');
+  }
+
+  // Handle deep linking to tabs
+  if (tabId) {
+    if (pageId === 'upgrades') {
+        const tabBtn = document.querySelector(`#upgrades .tab-link[data-tab="${tabId}"]`);
+        if (tabBtn) tabBtn.click();
+    } else if (pageId === 'tasks') {
+        const tabBtn = document.querySelector(`#tasks .tab-link[data-tab="${tabId}"]`);
+        if (tabBtn) tabBtn.click();
+    }
+  }
+
+  closeFolder();
 }
+
+function toggleFolder(folderId) {
+    if (activeFolder === folderId) {
+        closeFolder();
+    } else {
+        openFolder(folderId);
+    }
+}
+
+function openFolder(folderId) {
+    activeFolder = folderId;
+    const folder = folders[folderId];
+    if (!folder) return;
+
+    const overlay = document.getElementById('nav-menu-overlay');
+    const submenu = document.getElementById('nav-submenu');
+    
+    submenu.innerHTML = `
+        <div style="padding: 0.5rem 1rem; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">${folder.title}</div>
+        ${folder.items.map(item => `
+            <div class="submenu-item" onclick="showPage('${item.page}', '${item.tab || ''}')">
+                <span class="submenu-icon">${item.icon}</span>
+                <span class="submenu-text">${item.label}</span>
+                <span class="submenu-arrow">➜</span>
+            </div>
+        `).join('')}
+    `;
+
+    overlay.classList.add('active');
+    
+    // Feedback
+    tg.HapticFeedback.impactOccurred('medium');
+}
+
+function closeFolder() {
+    activeFolder = null;
+    const overlay = document.getElementById('nav-menu-overlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+window.showPage = showPage; // Expose to onclick in submenu
+
 
 function updateUI() {
   if (!playerData) return;
@@ -1558,18 +1664,24 @@ async function drawSolo() {
 }
 
 function setupEventListeners() {
-  for (const key in navButtons) {
-    if (!navButtons[key]) continue;
-    
-    if (key === 'leaderboard') {
-      navButtons[key].addEventListener('click', () => {
-        showPage(key);
-        fetchAndDisplayLeaderboard('score');
-      });
-    } else {
-      navButtons[key].addEventListener('click', () => showPage(key));
+  // Direct nav buttons
+  document.getElementById('nav-clicker')?.addEventListener('click', () => showPage('clicker'));
+  document.getElementById('nav-games')?.addEventListener('click', () => showPage('games'));
+
+  // Folder nav buttons
+  document.querySelectorAll('.folder-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const folderId = btn.dataset.folder;
+        toggleFolder(folderId);
+    });
+  });
+
+  // Close folder on overlay click
+  document.getElementById('nav-menu-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'nav-menu-overlay') {
+        closeFolder();
     }
-  }
+  });
 
   coinImageEl.addEventListener('mousedown', () => {
     if (!playerData) return;
