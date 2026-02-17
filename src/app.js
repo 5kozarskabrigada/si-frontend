@@ -64,6 +64,7 @@ let clickValue = new Decimal(0);
 
 const SYNC_INTERVAL = 5000;
 let clicksThisSecond = 0;
+let pendingClickUpdates = 0;
 let lastFrameTime = Date.now();
 
 const INTRA_TIER_COST_MULTIPLIER = new Decimal(1.215);
@@ -111,17 +112,13 @@ const baseCosts = {
 };
 
 const tasksSystem = {
-  dailyTasks: [], // Now populated from API
-  achievements: [],
-  lastDailyRefresh: null, // Legacy, can be ignored or used for API polling optimization
-  permanentAchievements: [
-    { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
-    { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
-    { id: 'click_1000', type: 'clicks', target: 1000, title: 'Click Master', description: 'Reach 1,000 total clicks', reward: '0.000000200', completed: false },
-    { id: 'first_upgrade', type: 'upgrades', target: 1, title: 'First Upgrade', description: 'Purchase your first upgrade', reward: '0.000000030', completed: false },
-    { id: 'upgrade_10', type: 'upgrades', target: 10, title: 'Upgrade Collector', description: 'Purchase 10 upgrades', reward: '0.000000150', completed: false },
-    { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
-  ],
+  dailyTasks: [], // Populated from API
+  lifetimeStats: {
+    totalClicks: 0,
+    totalUpgrades: 0,
+    totalScore: '0',
+    dailyTasksCompleted: 0,
+  }
 };
 
 let gameState = {
@@ -160,9 +157,7 @@ function parseBet(inputEl) {
 
 async function initTasksSystem() {
   await loadTasksProgress();
-  // Legacy daily task generation removed
   renderTasksUI();
-  // startDailyTimer(); // Removed as admin tasks have their own expiration
 }
 
 async function loadTasksProgress() {
@@ -170,23 +165,10 @@ async function loadTasksProgress() {
   try {
     const tasks = await apiRequest('/tasks/active');
     if (tasks) {
-      tasksSystem.dailyTasks = tasks; // Using existing 'dailyTasks' array to store active admin tasks
+      tasksSystem.dailyTasks = tasks;
     }
   } catch (e) {
     console.error('Failed to load active tasks:', e);
-  }
-
-  // Load Achievements
-  const savedAchievements = localStorage.getItem('achievementsProgress');
-  if (savedAchievements) {
-    tasksSystem.achievements = JSON.parse(savedAchievements);
-  } else {
-    tasksSystem.achievements = tasksSystem.permanentAchievements.map(ach => ({
-      ...ach,
-      progress: 0,
-      completed: false,
-      claimed: false,
-    }));
   }
 
   const stats = JSON.parse(localStorage.getItem('lifetimeStats') || '{}');
@@ -221,26 +203,6 @@ async function updateTaskProgress(type, amount = 1) {
     }
   }
 
-  // Update achievements (local)
-  tasksSystem.achievements.forEach(achievement => {
-    if (!achievement.completed && achievement.type === type) {
-      if (type === 'score') {
-        const currentScore = new Decimal(score);
-        const targetScore = new Decimal(achievement.target);
-        if (currentScore.greaterThanOrEqualTo(targetScore)) {
-          achievement.progress = achievement.target;
-          achievement.completed = true;
-        }
-      } else {
-        achievement.progress += amount;
-        if (achievement.progress >= achievement.target) {
-          achievement.completed = true;
-          achievement.progress = achievement.target;
-        }
-      }
-    }
-  });
-
   if (type === 'clicks') {
     tasksSystem.lifetimeStats.totalClicks += amount;
   } else if (type === 'upgrades') {
@@ -251,36 +213,8 @@ async function updateTaskProgress(type, amount = 1) {
   renderTasksUI();
 }
 
-async function claimTaskReward(taskId, isAchievement = false) {
-  const tasks = isAchievement ? tasksSystem.achievements : tasksSystem.dailyTasks;
-  const task = tasks.find(t => t.id === taskId);
-
-  if (!task || !task.completed || task.claimed) return;
-
-  try {
-    const reward = new Decimal(task.reward);
-    score = score.plus(reward);
-    updateUI();
-    task.claimed = true;
-
-    if (!isAchievement) {
-      tasksSystem.lifetimeStats.dailyTasksCompleted += 1;
-      updateTaskProgress('daily_complete', 1);
-    }
-
-    saveTasksProgress();
-    renderTasksUI();
-    tg.HapticFeedback.notificationOccurred('success');
-    showRewardNotification(`+${reward.toFixed(9)} coins!`);
-  } catch (error) {
-    console.error('Failed to claim reward:', error);
-    tg.HapticFeedback.notificationOccurred('error');
-  }
-}
-
 function renderTasksUI() {
   renderDailyTasks();
-  renderAchievements();
 }
 
 function renderDailyTasks() {
@@ -302,6 +236,19 @@ function renderDailyTasks() {
           ? `${new Decimal(task.reward_amount).toFixed(9)} coins`
           : `🎁 ${task.reward_amount}x Present`;
 
+      let actionButton = '';
+      
+      if (isClaimed) {
+          actionButton = '<span class="claimed-text">Claimed</span>';
+      } else if (isCompleted) {
+          actionButton = `<button class="claim-btn" onclick="claimAdminTask('${task.id}')">Claim</button>`;
+      } else if (task.type === 'manual' && task.task_url) {
+          // Logic for verification button
+          actionButton = `<button class="claim-btn verify-btn" id="btn-verify-${task.id}" onclick="verifyTask('${task.id}', '${task.task_url}')">Go</button>`;
+      } else {
+          actionButton = `<div class="task-reward">${rewardDisplay}</div>`;
+      }
+
       return `
       <div class="task-item ${isCompleted ? 'completed' : ''} ${isClaimed ? 'claimed' : ''}">
         <div class="task-info">
@@ -313,19 +260,69 @@ function renderDailyTasks() {
           <div class="task-progress-text">${task.progress} / ${task.target_value}</div>
         </div>
         <div class="task-action">
-          ${
-            isClaimed
-              ? '<span class="claimed-text">Claimed</span>'
-              : isCompleted
-              ? `<button class="claim-btn" onclick="claimAdminTask('${task.id}')">Claim</button>`
-              : `<div class="task-reward">${rewardDisplay}</div>`
-          }
+          ${actionButton}
         </div>
       </div>
     `;
     })
     .join('');
 }
+
+async function verifyTask(taskId, url) {
+    const btn = document.getElementById(`btn-verify-${taskId}`);
+    if (!btn) return;
+
+    // 1. Open URL
+    if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
+    } else {
+        window.open(url, '_blank');
+    }
+
+    // 2. Change button to "Checking..." then "Claim" after delay
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    
+    // Simulate verification delay (10 seconds)
+    setTimeout(async () => {
+        btn.textContent = 'Verify';
+        btn.disabled = false;
+        btn.onclick = async () => {
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+            
+            // Assume verification success for now (since we don't have a bot)
+            // Call API to complete task
+            try {
+                // Force complete the task on backend
+                const updated = await apiRequest('/tasks/progress', 'POST', {
+                    userId: playerData.user_id,
+                    taskId: taskId,
+                    increment: 1 // For manual tasks, 1 is usually the target
+                });
+                
+                if (updated.completed) {
+                    showGameNotification('Task verified!', 'success');
+                    // Refresh tasks
+                    await loadTasksProgress();
+                    renderTasksUI();
+                } else {
+                    // If target > 1
+                    showGameNotification('Progress updated!', 'success');
+                    await loadTasksProgress();
+                    renderTasksUI();
+                }
+            } catch (e) {
+                console.error(e);
+                showGameNotification('Verification failed. Try again.', 'error');
+                btn.textContent = 'Verify';
+                btn.disabled = false;
+            }
+        };
+    }, 5000);
+}
+
+window.verifyTask = verifyTask;
 
 async function claimAdminTask(taskId) {
   try {
@@ -353,69 +350,7 @@ async function claimAdminTask(taskId) {
 
 window.claimAdminTask = claimAdminTask;
 
-function renderAchievements() {
-  const container = document.getElementById('achievements-list');
-  if (!container) return;
-
-  container.innerHTML = tasksSystem.achievements
-    .map(
-      achievement => `
-        <div class="achievement-item ${achievement.completed ? 'achievement-completed' : ''}">
-          <div class="task-info">
-            <div class="task-title">${achievement.title}</div>
-            <div class="task-description">${achievement.description}</div>
-            <div class="task-progress">
-              Progress: ${achievement.progress}/${achievement.target}
-              ${
-                achievement.completed
-                  ? '<span class="completed-badge"> ✓ Completed</span>'
-                  : ''
-              }
-            </div>
-            <div class="task-reward">Reward: ${achievement.reward} coins</div>
-          </div>
-          <div class="task-action">
-            <button class="claim-btn"
-              onclick="claimTaskReward('${achievement.id}', true)"
-              ${achievement.completed && !achievement.claimed ? '' : 'disabled'}>
-              ${achievement.claimed ? 'Claimed' : 'Claim'}
-            </button>
-          </div>
-        </div>
-      `,
-    )
-    .join('');
-}
-
-function startDailyTimer() {
-  function updateTimer() {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-
-    const diff = tomorrow - now;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    const timerElement = document.getElementById('refresh-timer');
-    if (timerElement) {
-      timerElement.textContent = `${hours
-        .toString()
-        .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
-        .toString()
-        .padStart(2, '0')}`;
-    }
-  }
-
-  updateTimer();
-  setInterval(updateTimer, 1000);
-}
-
 function saveTasksProgress() {
-  localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
-  localStorage.setItem('achievementsProgress', JSON.stringify(tasksSystem.achievements));
   localStorage.setItem('lifetimeStats', JSON.stringify(tasksSystem.lifetimeStats));
 }
 
@@ -532,9 +467,6 @@ function showPage(pageId, tabId = null) {
   if (tabId) {
     if (pageId === 'upgrades') {
         const tabBtn = document.querySelector(`#upgrades .tab-link[data-tab="${tabId}"]`);
-        if (tabBtn) tabBtn.click();
-    } else if (pageId === 'tasks') {
-        const tabBtn = document.querySelector(`#tasks .tab-link[data-tab="${tabId}"]`);
         if (tabBtn) tabBtn.click();
     }
   }
@@ -1301,26 +1233,6 @@ function renderGameControls() {
   }
 }
 
-function setupTaskTabs() {
-  const taskTabs = document.querySelectorAll('#tasks .tab-link');
-  const contents = {
-    'daily-tasks': document.getElementById('daily-tasks'),
-    achievements: document.getElementById('achievements'),
-  };
-
-  taskTabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.tab;
-
-      taskTabs.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      Object.values(contents).forEach(c => c && c.classList.remove('active'));
-      if (contents[target]) contents[target].classList.add('active');
-    });
-  });
-}
-
 function setupLeaderboardTabs() {
   const sortButtons = document.querySelectorAll('#leaderboard .tab-link');
 
@@ -1571,7 +1483,6 @@ async function init() {
     updateUI();
     updateGamesUI();
      
-    setupTaskTabs();
     setupLeaderboardTabs();
     setupUpgradeTabs();
     setupTransactionSearch();
@@ -1680,8 +1591,9 @@ function setupEventListeners() {
     if (!playerData) return;
     score = score.plus(clickValue);
     clicksThisSecond++;
+    pendingClickUpdates++;
     tg.HapticFeedback.impactOccurred('light');
-    updateTaskProgress('clicks', 1);
+    
     coinImageEl.classList.remove('bounce');
     void coinImageEl.offsetWidth;
     coinImageEl.classList.add('bounce');
@@ -1695,6 +1607,7 @@ function setupEventListeners() {
       event.preventDefault();
       score = score.plus(clickValue);
       clicksThisSecond++;
+      pendingClickUpdates++;
       tg.HapticFeedback.impactOccurred('light');
       coinImageEl.classList.remove('bounce');
       void coinImageEl.offsetWidth;
@@ -1748,13 +1661,14 @@ function setupEventListeners() {
   setInterval(() => {
     if (playerData) {
       apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
+      
+      // Flush pending click tasks
+      if (pendingClickUpdates > 0) {
+          updateTaskProgress('clicks', pendingClickUpdates);
+          pendingClickUpdates = 0;
+      }
     }
   }, SYNC_INTERVAL);
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin panel loaded');
-    initAdminPanel();
-});
 
 init();
