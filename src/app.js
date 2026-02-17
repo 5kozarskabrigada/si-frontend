@@ -111,16 +111,9 @@ const baseCosts = {
 };
 
 const tasksSystem = {
-  dailyTasks: [],
+  dailyTasks: [], // Now populated from API
   achievements: [],
-  lastDailyRefresh: null,
-  dailyTaskTemplates: [
-    { type: 'clicks', target: 100, title: 'Click Master', description: 'Perform {target} clicks', reward: '0.000000100' },
-    { type: 'score', target: '0.000001000', title: 'Coin Collector', description: 'Reach {target} total coins', reward: '0.000000050' },
-    { type: 'upgrades', target: 3, title: 'Upgrade Enthusiast', description: 'Purchase {target} upgrades', reward: '0.000000075' },
-    { type: 'login', target: 1, title: 'Daily Login', description: 'Log in today', reward: '0.000000025' },
-    { type: 'clicks_5s', target: 10, title: 'Rapid Clicker', description: 'Achieve {target} CPS', reward: '0.000000080' },
-  ],
+  lastDailyRefresh: null, // Legacy, can be ignored or used for API polling optimization
   permanentAchievements: [
     { id: 'first_click', type: 'clicks', target: 1, title: 'First Click!', description: 'Make your first click', reward: '0.000000010', completed: false },
     { id: 'click_100', type: 'clicks', target: 100, title: 'Hundred Clicks', description: 'Reach 100 total clicks', reward: '0.000000050', completed: false },
@@ -128,7 +121,6 @@ const tasksSystem = {
     { id: 'first_upgrade', type: 'upgrades', target: 1, title: 'First Upgrade', description: 'Purchase your first upgrade', reward: '0.000000030', completed: false },
     { id: 'upgrade_10', type: 'upgrades', target: 10, title: 'Upgrade Collector', description: 'Purchase 10 upgrades', reward: '0.000000150', completed: false },
     { id: 'score_million', type: 'score', target: '0.000001000', title: 'Millionaire', description: 'Reach 1 million coins', reward: '0.000000500', completed: false },
-    { id: 'daily_complete', type: 'daily_complete', target: 5, title: 'Task Master', description: 'Complete 5 daily tasks', reward: '0.000000300', completed: false },
   ],
 };
 
@@ -168,36 +160,23 @@ function parseBet(inputEl) {
 
 async function initTasksSystem() {
   await loadTasksProgress();
-  generateDailyTasks();
+  // Legacy daily task generation removed
   renderTasksUI();
-  startDailyTimer();
-}
-
-function generateDailyTasks() {
-  const today = new Date().toDateString();
-  const lastRefresh = localStorage.getItem('lastDailyRefresh');
-
-  if (lastRefresh !== today) {
-    const shuffled = [...tasksSystem.dailyTaskTemplates].sort(() => 0.5 - Math.random());
-    tasksSystem.dailyTasks = shuffled.slice(0, 5).map((task, index) => ({
-      ...task,
-      id: `daily_${index}`,
-      progress: 0,
-      completed: false,
-      claimed: false,
-    }));
-
-    localStorage.setItem('lastDailyRefresh', today);
-    localStorage.setItem('dailyTasks', JSON.stringify(tasksSystem.dailyTasks));
-  } else {
-    const savedTasks = localStorage.getItem('dailyTasks');
-    if (savedTasks) {
-      tasksSystem.dailyTasks = JSON.parse(savedTasks);
-    }
-  }
+  // startDailyTimer(); // Removed as admin tasks have their own expiration
 }
 
 async function loadTasksProgress() {
+  // Load Admin Tasks from API
+  try {
+    const tasks = await apiRequest('/tasks/active');
+    if (tasks) {
+      tasksSystem.dailyTasks = tasks; // Using existing 'dailyTasks' array to store active admin tasks
+    }
+  } catch (e) {
+    console.error('Failed to load active tasks:', e);
+  }
+
+  // Load Achievements
   const savedAchievements = localStorage.getItem('achievementsProgress');
   if (savedAchievements) {
     tasksSystem.achievements = JSON.parse(savedAchievements);
@@ -219,26 +198,30 @@ async function loadTasksProgress() {
   };
 }
 
-function updateTaskProgress(type, amount = 1) {
-  tasksSystem.dailyTasks.forEach(task => {
-    if (!task.completed && task.type === type) {
-      if (type === 'score') {
-        const currentScore = new Decimal(score);
-        const targetScore = new Decimal(task.target);
-        if (currentScore.greaterThanOrEqualTo(targetScore)) {
-          task.progress = task.target;
-          task.completed = true;
+async function updateTaskProgress(type, amount = 1) {
+  // Update admin tasks via API
+  const relevantTasks = tasksSystem.dailyTasks.filter(t => t.type === type && !t.completed);
+  for (const task of relevantTasks) {
+    try {
+        const updated = await apiRequest('/tasks/progress', 'POST', {
+            userId: playerData.user_id,
+            taskId: task.id,
+            increment: amount
+        });
+        
+        // Update local state
+        task.progress = updated.progress;
+        task.completed = updated.completed;
+        
+        if (task.completed) {
+            showGameModal('Task Completed!', `You completed: ${task.title}`, '✅', 'Great!');
         }
-      } else {
-        task.progress += amount;
-        if (task.progress >= task.target) {
-          task.completed = true;
-          task.progress = task.target;
-        }
-      }
+    } catch (e) {
+        console.error('Failed to update task progress:', e);
     }
-  });
+  }
 
+  // Update achievements (local)
   tasksSystem.achievements.forEach(achievement => {
     if (!achievement.completed && achievement.type === type) {
       if (type === 'score') {
@@ -305,39 +288,70 @@ function renderDailyTasks() {
   if (!container) return;
 
   if (tasksSystem.dailyTasks.length === 0) {
-    container.innerHTML = '<p>No daily tasks available.</p>';
+    container.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">No active tasks available right now.</p>';
     return;
   }
 
   container.innerHTML = tasksSystem.dailyTasks
-    .map(
-      task => `
-        <div class="task-item ${task.completed ? 'task-completed' : ''}">
-          <div class="task-info">
-            <div class="task-title">${task.title}</div>
-            <div class="task-description">${task.description.replace('{target}', task.target)}</div>
-            <div class="task-progress">
-              Progress: ${task.progress}/${task.target}
-              ${
-                task.completed
-                  ? '<span class="completed-badge"> ✓ Completed</span>'
-                  : ''
-              }
-            </div>
-            <div class="task-reward">Reward: ${task.reward} coins</div>
+    .map(task => {
+      const isCompleted = task.completed;
+      const isClaimed = task.claimed;
+      const progressPercent = Math.min((task.progress / task.target_value) * 100, 100);
+      
+      const rewardDisplay = task.reward_type === 'coins' 
+          ? `${new Decimal(task.reward_amount).toFixed(9)} coins`
+          : `🎁 ${task.reward_amount}x Present`;
+
+      return `
+      <div class="task-item ${isCompleted ? 'completed' : ''} ${isClaimed ? 'claimed' : ''}">
+        <div class="task-info">
+          <div class="task-title">${task.title}</div>
+          <div class="task-desc">${task.description}</div>
+          <div class="task-progress-bar">
+            <div class="task-progress-fill" style="width: ${progressPercent}%"></div>
           </div>
-          <div class="task-action">
-            <button class="claim-btn"
-              onclick="claimTaskReward('${task.id}', false)"
-              ${task.completed && !task.claimed ? '' : 'disabled'}>
-              ${task.claimed ? 'Claimed' : 'Claim'}
-            </button>
-          </div>
+          <div class="task-progress-text">${task.progress} / ${task.target_value}</div>
         </div>
-      `,
-    )
+        <div class="task-action">
+          ${
+            isClaimed
+              ? '<span class="claimed-text">Claimed</span>'
+              : isCompleted
+              ? `<button class="claim-btn" onclick="claimAdminTask('${task.id}')">Claim</button>`
+              : `<div class="task-reward">${rewardDisplay}</div>`
+          }
+        </div>
+      </div>
+    `;
+    })
     .join('');
 }
+
+async function claimAdminTask(taskId) {
+  try {
+    const response = await apiRequest('/tasks/claim', 'POST', {
+        userId: playerData.user_id,
+        taskId: taskId
+    });
+
+    if (response.success) {
+        showGameModal('Reward Claimed!', 
+            response.reward.type === 'coins' 
+                ? `You received ${response.reward.amount} coins!` 
+                : `You received a special present!`, 
+            '🎉'
+        );
+        
+        // Refresh tasks and UI
+        await initTasksSystem();
+        updateUI();
+    }
+  } catch (e) {
+    showNotification('Failed to claim reward', 'error');
+  }
+}
+
+window.claimAdminTask = claimAdminTask;
 
 function renderAchievements() {
   const container = document.getElementById('achievements-list');
