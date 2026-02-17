@@ -227,6 +227,23 @@ function renderDailyTasks() {
   }
 
   container.innerHTML = tasksSystem.dailyTasks
+    .sort((a, b) => {
+        // Sort order:
+        // 1. Ready to Claim (Completed & !Claimed) - Priority
+        // 2. Active (Not Completed)
+        // 3. Claimed (Completed & Claimed) - Bottom
+        
+        const aReady = a.completed && !a.claimed;
+        const bReady = b.completed && !b.claimed;
+        
+        if (aReady && !bReady) return -1;
+        if (!aReady && bReady) return 1;
+        
+        if (!a.completed && b.completed) return -1;
+        if (a.completed && !b.completed) return 1;
+        
+        return 0;
+    })
     .map(task => {
       const isCompleted = task.completed;
       const isClaimed = task.claimed;
@@ -241,7 +258,7 @@ function renderDailyTasks() {
       if (isClaimed) {
           actionButton = '<span class="claimed-text">Claimed</span>';
       } else if (isCompleted) {
-          actionButton = `<button class="claim-btn" onclick="claimAdminTask('${task.id}')">Claim</button>`;
+          actionButton = `<button class="claim-btn" id="btn-claim-${task.id}" onclick="claimAdminTask('${task.id}')">Claim</button>`;
       } else if (task.type === 'manual' && task.task_url) {
           // Logic for verification button
           actionButton = `<button class="claim-btn verify-btn" id="btn-verify-${task.id}" onclick="verifyTask('${task.id}', '${task.task_url}')">Go</button>`;
@@ -325,6 +342,12 @@ async function verifyTask(taskId, url) {
 window.verifyTask = verifyTask;
 
 async function claimAdminTask(taskId) {
+  const btn = document.getElementById(`btn-claim-${taskId}`);
+  if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Claiming...';
+  }
+
   try {
     const response = await apiRequest('/tasks/claim', 'POST', {
         userId: playerData.user_id,
@@ -342,9 +365,20 @@ async function claimAdminTask(taskId) {
         // Refresh tasks and UI
         await initTasksSystem();
         updateUI();
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Claim';
+        }
+        showGameNotification(response.error || 'Failed to claim reward', 'error');
     }
   } catch (e) {
-    showNotification('Failed to claim reward', 'error');
+    console.error('Claim error:', e);
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Claim';
+    }
+    showGameNotification('Failed to claim reward', 'error');
   }
 }
 
@@ -1527,7 +1561,7 @@ async function checkBroadcast() {
   try {
     const data = await apiRequest('/broadcast');
     if (data && data.active && data.message) {
-      const broadcastId = data.id || '0';
+      const broadcastId = String(data.id || '0');
       const viewedId = localStorage.getItem('viewed_broadcast_id');
 
       // Only show if the message ID is different from what we've already viewed
