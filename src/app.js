@@ -354,7 +354,7 @@ function renderSkinsUI() {
     return `
       <div class="skin-card ${selectedClass}">
         <div class="skin-image-wrapper">
-          <img src="${imgSrc}" alt="${escapeHtml(skin.name)}" onerror="console.warn('Failed to load skin image:', this.src); this.src='/assets/skin1.png'" onload="console.log('Loaded skin image:', this.src)">
+          <img src="${imgSrc}" alt="${escapeHtml(skin.name)}" onerror="console.warn('Failed to load skin image:', this.src); this.src='/assets/skin1.png'; this.style.filter='grayscale(0)'" onload="console.log('Loaded skin image:', this.src)">
         </div>
         <div class="skin-card-content">
           <div class="skin-name">${escapeHtml(skin.name)}</div>
@@ -414,7 +414,10 @@ window.selectSkin = async function(skinId) {
       if (selectedImg) {
         coinImageEl.src = selectedImg;
         coinImageEl.onload = () => { console.log('Skin image loaded successfully'); };
-        coinImageEl.onerror = () => { coinImageEl.src = '/assets/skin1.png'; console.warn('Failed to load skin, using fallback'); };
+        coinImageEl.onerror = () => { 
+          coinImageEl.src = '/assets/skin1.png'; 
+          console.warn('Failed to load skin, using fallback'); 
+        };
       }
       await loadSkins();
       showGameNotification('Skin applied!', 'success');
@@ -771,19 +774,16 @@ async function purchaseUpgrade(upgradeId) {
 
     try {
       await loadSkins();
-      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
-      if (img) coinImageEl.src = img;
+      const selectedImg = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (selectedImg) {
+        coinImageEl.src = selectedImg;
+        coinImageEl.onerror = () => { 
+          coinImageEl.src = '/assets/skin1.png'; 
+          console.warn('Failed to load selected skin, using fallback'); 
+        };
+      }
     } catch (e) {
-      console.warn('Failed to load or apply skin on init:', e);
-    }
-
-
-    try {
-      await loadSkins();
-      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
-      if (img) coinImageEl.src = img;
-    } catch (e) {
-      console.warn('Failed to load or apply skin:', e);
+      console.warn('Failed to load skins on init:', e);
     }
 
     updateUI();
