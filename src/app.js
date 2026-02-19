@@ -321,7 +321,7 @@ async function loadSkins() {
 }
 
 function renderSkinsUI() {
-  const container = document.getElementById('skins');
+  const container = document.getElementById('skins-list') || document.getElementById('skins');
   if (!container) return;
 
   if (!skinsList || skinsList.length === 0) {
@@ -349,7 +349,7 @@ function renderSkinsUI() {
     return `
       <div class="skin-card content-card" style="display:flex; gap:1rem; align-items:center;">
         <div style="width:96px; height:96px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
-          <img src="${escapeHtml(skin.image_url)}" alt="${escapeHtml(skin.name)}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:contain;">
+          <img src="${escapeHtml(skin.image_url || '')}" alt="${escapeHtml(skin.name)}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/96?text=No+Image'">
         </div>
         <div style="flex:1; min-width:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
