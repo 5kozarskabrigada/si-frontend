@@ -1,4 +1,4 @@
-document.addEventListener('gesturestart', e => e.preventDefault());
+﻿document.addEventListener('gesturestart', e => e.preventDefault());
 
 const BACKEND_URL = 'https://si-backend-2i9b.onrender.com';
 const tg = window.Telegram.WebApp;
@@ -36,10 +36,10 @@ const navButtons = {
 const mainFolder = {
   title: 'Menu',
   items: [
-    { id: 'nav-upgrades', label: 'Upgrades', icon: '🚀', page: 'upgrades' },
-    { id: 'nav-tasks', label: 'Tasks', icon: '📋', page: 'tasks' },
-    { id: 'nav-wallet', label: 'Wallet', icon: '💰', page: 'transactions' },
-    { id: 'nav-skins', label: 'Skins', icon: '👕', page: 'skins' },
+    { id: 'nav-upgrades', label: 'Upgrades', icon: 'ðŸš€', page: 'upgrades' },
+    { id: 'nav-tasks', label: 'Tasks', icon: 'ðŸ“‹', page: 'tasks' },
+    { id: 'nav-wallet', label: 'Wallet', icon: 'ðŸ’°', page: 'transactions' },
+    { id: 'nav-skins', label: 'Skins', icon: 'ðŸ‘•', page: 'skins' },
   ]
 };
 
@@ -112,7 +112,7 @@ const baseCosts = {
 };
 
 const tasksSystem = {
-  dailyTasks: [], // Populated from API
+  dailyTasks: [], 
   lifetimeStats: {
     totalClicks: 0,
     totalUpgrades: 0,
@@ -149,6 +149,16 @@ function safeDecimal(value) {
   }
 }
 
+function escapeHtml(text) {
+  if (text === null || typeof text === 'undefined') return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function parseBet(inputEl) {
   const raw = (inputEl.value || '0').trim();
   if (!raw || isNaN(Number(raw))) return new Decimal(0);
@@ -161,7 +171,7 @@ async function initTasksSystem() {
 }
 
 async function loadTasksProgress() {
-  // Load Admin Tasks from API
+
   try {
     const tasks = await apiRequest('/tasks/active');
     if (tasks) {
@@ -181,7 +191,7 @@ async function loadTasksProgress() {
 }
 
 async function updateTaskProgress(type, amount = 1) {
-  // Update admin tasks via API
+
   const relevantTasks = tasksSystem.dailyTasks.filter(t => t.type === type && !t.completed);
   for (const task of relevantTasks) {
     try {
@@ -191,12 +201,12 @@ async function updateTaskProgress(type, amount = 1) {
             increment: amount
         });
         
-        // Update local state
+
         task.progress = updated.progress;
         task.completed = updated.completed;
         
         if (task.completed) {
-            showGameModal('Task Completed!', `You completed: ${task.title}`, '✅', 'Great!');
+            showGameModal('Task Completed!', `You completed: ${task.title}`, 'âœ…', 'Great!');
         }
     } catch (e) {
         console.error('Failed to update task progress:', e);
@@ -228,10 +238,10 @@ function renderDailyTasks() {
 
   container.innerHTML = tasksSystem.dailyTasks
     .sort((a, b) => {
-        // Sort order:
-        // 1. Ready to Claim (Completed & !Claimed) - Priority
-        // 2. Active (Not Completed)
-        // 3. Claimed (Completed & Claimed) - Bottom
+
+
+
+
         
         const aReady = a.completed && !a.claimed;
         const bReady = b.completed && !b.claimed;
@@ -251,7 +261,7 @@ function renderDailyTasks() {
       
       const rewardDisplay = task.reward_type === 'coins' 
           ? `${new Decimal(task.reward_amount).toFixed(9)} coins`
-          : `🎁 ${task.reward_amount}x Present`;
+          : `ðŸŽ ${task.reward_amount}x Present`;
 
       let actionButton = '';
       
@@ -260,7 +270,7 @@ function renderDailyTasks() {
       } else if (isCompleted) {
           actionButton = `<button class="claim-btn" id="btn-claim-${task.id}" onclick="claimAdminTask('${task.id}')">Claim</button>`;
       } else if (task.type === 'manual' && task.task_url) {
-          // Logic for verification button
+
           actionButton = `<button class="claim-btn verify-btn" id="btn-verify-${task.id}" onclick="verifyTask('${task.id}', '${task.task_url}')">Go</button>`;
       } else {
           actionButton = `<div class="task-reward">${rewardDisplay}</div>`;
@@ -285,22 +295,150 @@ function renderDailyTasks() {
     .join('');
 }
 
+
+let skinsList = [];
+
+async function loadSkins() {
+  try {
+    const res = await apiRequest('/skins');
+    skinsList = Array.isArray(res.skins) ? res.skins : (res.skins || []);
+
+
+    const ownedMap = {};
+    (playerData?.owned_skins || []).forEach(s => { if (s && s.id) ownedMap[String(s.id)] = s; });
+
+    skinsList = skinsList.map(s => ({
+      ...s,
+      owned: Boolean(ownedMap[String(s.id)]),
+      owned_meta: ownedMap[String(s.id)] || null
+    }));
+
+    renderSkinsUI();
+  } catch (e) {
+    console.error('Failed to load skins:', e);
+  }
+}
+
+function renderSkinsUI() {
+  const container = document.getElementById('skins');
+  if (!container) return;
+
+  if (!skinsList || skinsList.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">No skins available yet.</p>';
+    return;
+  }
+
+  const grid = skinsList.map(skin => {
+    const owned = skin.owned;
+    const isSelected = playerData?.selected_skin && playerData.selected_skin.id === skin.id;
+    const priceText = skin.price ? `${new Decimal(skin.price).toFixed(9)} coins` : (skin.task_id ? 'Unlock via task' : 'Free');
+
+    let actionBtn = '';
+    if (owned) {
+      if (isSelected) actionBtn = '<span class="badge badge-primary">Selected</span>';
+      else actionBtn = `<button class="btn btn-outline" onclick="selectSkin('${skin.id}')">Select</button>`;
+    } else if (skin.price) {
+      actionBtn = `<button class="btn btn-primary" onclick="purchaseSkin('${skin.id}')">Buy for ${new Decimal(skin.price).toFixed(9)}</button>`;
+    } else if (skin.task_id) {
+      actionBtn = `<button class="btn btn-outline" onclick="showTaskForSkin('${skin.task_id}')">View Task</button>`;
+    } else {
+      actionBtn = `<button class="btn btn-outline" disabled>Unavailable</button>`;
+    }
+
+    return `
+      <div class="skin-card content-card" style="display:flex; gap:1rem; align-items:center;">
+        <div style="width:96px; height:96px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+          <img src="${escapeHtml(skin.image_url)}" alt="${escapeHtml(skin.name)}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:contain;">
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+            <div style="min-width:0;">
+              <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${escapeHtml(skin.name)}</div>
+              <div style="color:var(--text-dim); font-size:0.85rem;">${priceText}</div>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              ${actionBtn}
+            </div>
+          </div>
+          ${skin.description ? `<div style="margin-top:0.5rem; color:var(--text-secondary);">${escapeHtml(skin.description)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `<div style="display:flex; flex-direction:column; gap:1rem;">${grid}</div>`;
+}
+
+window.showTaskForSkin = function(taskId) {
+  if (!taskId) return showGameNotification('Task information not available', 'error');
+
+  showPage('tasks');
+
+  setTimeout(() => {
+    const el = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    else showGameNotification('Open the Tasks tab to view how to unlock this skin', 'info');
+  }, 300);
+};
+
+window.purchaseSkin = async function(skinId) {
+  if (!skinId) return;
+  try {
+    showGameNotification('Processing purchase...', 'info');
+    const result = await apiRequest('/skins/purchase', 'POST', { skinId });
+    if (result && result.success) {
+
+      playerData = await apiRequest(`/player/${userId}`);
+      score = new Decimal(playerData.score);
+      updateUI();
+      await loadSkins();
+      showGameNotification('Skin purchased!', 'success');
+    } else {
+      showGameNotification((result && result.error) || 'Purchase failed', 'error');
+    }
+  } catch (e) {
+    console.error('purchaseSkin error', e);
+    showGameNotification(e.message || 'Purchase failed', 'error');
+  }
+};
+
+window.selectSkin = async function(skinId) {
+  if (!skinId) return;
+  try {
+    const res = await apiRequest('/player/select-skin', 'POST', { skinId });
+    if (res && res.success) {
+      playerData = await apiRequest(`/player/${userId}`);
+
+      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (img) coinImageEl.src = img;
+      await loadSkins();
+      showGameNotification('Skin applied!', 'success');
+    } else {
+      showGameNotification(res.error || 'Failed to select skin', 'error');
+    }
+  } catch (e) {
+    console.error('selectSkin error', e);
+    showGameNotification(e.message || 'Failed to select skin', 'error');
+  }
+};
+
+
 async function verifyTask(taskId, url) {
     const btn = document.getElementById(`btn-verify-${taskId}`);
     if (!btn) return;
 
-    // 1. Open URL
+
     if (window.Telegram?.WebApp?.openLink) {
         window.Telegram.WebApp.openLink(url);
     } else {
         window.open(url, '_blank');
     }
 
-    // 2. Change button to "Checking..." then "Claim" after delay
+
     btn.disabled = true;
     btn.textContent = 'Checking...';
     
-    // Simulate verification delay (10 seconds)
+
     setTimeout(async () => {
         btn.textContent = 'Verify';
         btn.disabled = false;
@@ -308,23 +446,23 @@ async function verifyTask(taskId, url) {
             btn.textContent = 'Verifying...';
             btn.disabled = true;
             
-            // Assume verification success for now (since we don't have a bot)
-            // Call API to complete task
+
+
             try {
-                // Force complete the task on backend
+
                 const updated = await apiRequest('/tasks/progress', 'POST', {
                     userId: playerData.user_id,
                     taskId: taskId,
-                    increment: 1 // For manual tasks, 1 is usually the target
+                    increment: 1 
                 });
                 
                 if (updated.completed) {
                     showGameNotification('Task verified!', 'success');
-                    // Refresh tasks
+
                     await loadTasksProgress();
                     renderTasksUI();
                 } else {
-                    // If target > 1
+
                     showGameNotification('Progress updated!', 'success');
                     await loadTasksProgress();
                     renderTasksUI();
@@ -359,10 +497,10 @@ async function claimAdminTask(taskId) {
             response.reward.type === 'coins' 
                 ? `You received ${response.reward.amount} coins!` 
                 : `You received a special present!`, 
-            '🎉'
+            'ðŸŽ‰'
         );
         
-        // Refresh tasks and UI
+
         await initTasksSystem();
         updateUI();
     } else {
@@ -492,12 +630,12 @@ function showPage(pageId, tabId = null) {
     }
   }
 
-  // Handle specific page logic
+
   if (pageId === 'leaderboard') {
     fetchAndDisplayLeaderboard('score');
   }
 
-  // Handle deep linking to tabs
+
   if (tabId) {
     if (pageId === 'upgrades') {
         const tabBtn = document.querySelector(`#upgrades .tab-link[data-tab="${tabId}"]`);
@@ -527,7 +665,7 @@ function openFolder() {
             <div class="submenu-item" onclick="showPage('${item.page}')">
                 <span class="submenu-icon">${item.icon}</span>
                 <span class="submenu-text">${item.label}</span>
-                <span class="submenu-arrow">➜</span>
+                <span class="submenu-arrow">âžœ</span>
             </div>
         `).join('')}
     `;
@@ -542,7 +680,7 @@ function closeFolder() {
     if (overlay) overlay.classList.remove('active');
 }
 
-window.showPage = showPage; // Expose to onclick in submenu
+window.showPage = showPage; 
 
 
 function updateUI() {
@@ -618,6 +756,15 @@ async function purchaseUpgrade(upgradeId) {
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
+
+
+    try {
+      await loadSkins();
+      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (img) coinImageEl.src = img;
+    } catch (e) {
+      console.warn('Failed to load or apply skin:', e);
+    }
 
     updateUI();
     showGameNotification('Upgrade purchased!', 'success');
@@ -971,7 +1118,7 @@ async function drawSoloLottery() {
         showGameModal(
           'You Won!',
           `+${result.prize} SISI`,
-          '🎉'
+          'ðŸŽ‰'
         );
       } else {
         showGameNotification(`Winner: ${result.winner.username || 'Anonymous'} won ${result.prize}!`, 'success');
@@ -1421,7 +1568,7 @@ function showGameModal(title, message, emoji, buttonText = 'Claim Prize', onClos
 
   modal.querySelector('.close-modal').addEventListener('click', () => close(true));
   
-  // Only auto-close if no callback is provided (standard behavior for prizes/level ups)
+
   if (!onClose) {
     setTimeout(() => close(false), 5000);
   }
@@ -1564,10 +1711,10 @@ async function checkBroadcast() {
       const broadcastId = String(data.id || '0');
       const viewedId = localStorage.getItem('viewed_broadcast_id');
 
-      // Only show if the message ID is different from what we've already viewed
+
       if (broadcastId !== viewedId) {
         const type = data.type || 'info';
-        const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '🚫' : '📢');
+        const icon = type === 'warning' ? 'âš ï¸' : (type === 'error' ? 'ðŸš«' : 'ðŸ“¢');
         const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
         
         showGameModal(title, data.message, icon, 'Got it', () => {
@@ -1609,12 +1756,12 @@ async function drawSolo() {
 }
 
 function setupEventListeners() {
-  // Direct nav buttons
+
   document.getElementById('nav-clicker')?.addEventListener('click', () => showPage('clicker'));
   document.getElementById('nav-games')?.addEventListener('click', () => showPage('games'));
   document.getElementById('nav-folder')?.addEventListener('click', () => toggleFolder());
 
-  // Close folder on overlay click
+
   document.getElementById('nav-menu-overlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'nav-menu-overlay') {
         closeFolder();
@@ -1696,7 +1843,7 @@ function setupEventListeners() {
     if (playerData) {
       apiRequest('/player/sync', 'POST', { userId, score: score.toFixed(9) });
       
-      // Flush pending click tasks
+
       if (pendingClickUpdates > 0) {
           updateTaskProgress('clicks', pendingClickUpdates);
           pendingClickUpdates = 0;
@@ -1706,3 +1853,4 @@ function setupEventListeners() {
 }
 
 init();
+
