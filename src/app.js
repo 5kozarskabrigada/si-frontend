@@ -55,7 +55,7 @@ const userInfo = {
   photo_url: tg.initDataUnsafe?.user?.photo_url,
 };
 
-let userId = tg.initDataUnsafe?.user?.id ?? Date.now();
+let userId = tg.initDataUnsafe?.user?.id ?? null;
 const userName = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'Guest';
 
 let playerData = null;
@@ -589,9 +589,11 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'x-user-id': String(userId),
       },
     };
+    if (userId !== null && typeof userId !== 'undefined') {
+      options.headers['x-user-id'] = String(userId);
+    }
     if (body) options.body = JSON.stringify(body);
 
     const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
@@ -1644,6 +1646,12 @@ async function init() {
     await syncProfile();
     await initGames();
     await initTasksSystem();
+
+    if (!userId) {
+      loadingOverlay.classList.add('active');
+      loadingText.innerHTML = '<div style="text-align:center; padding:20px;">Please open the game from the Telegram app to play. <br><small style="color:var(--text-secondary);">No Telegram session detected.</small></div>';
+      return;
+    }
 
     playerData = await apiRequest(`/player/${userId}`);
     
