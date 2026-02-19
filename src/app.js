@@ -36,10 +36,11 @@ const navButtons = {
 const mainFolder = {
   title: 'Menu',
   items: [
-    { id: 'nav-upgrades', label: 'Upgrades', icon: 'ðŸš€', page: 'upgrades' },
-    { id: 'nav-tasks', label: 'Tasks', icon: 'ðŸ“‹', page: 'tasks' },
-    { id: 'nav-wallet', label: 'Wallet', icon: 'ðŸ’°', page: 'transactions' },
-    { id: 'nav-skins', label: 'Skins', icon: 'ðŸ‘•', page: 'skins' },
+    { id: 'nav-upgrades', label: 'Upgrades', icon: '<i class="fas fa-gem"></i>', page: 'upgrades' },
+    { id: 'nav-leaderboard', label: 'Leaderboard', icon: '<i class="fas fa-trophy"></i>', page: 'leaderboard' },
+    { id: 'nav-tasks', label: 'Tasks', icon: '<i class="fas fa-tasks"></i>', page: 'tasks' },
+    { id: 'nav-wallet', label: 'Wallet', icon: '<i class="fas fa-wallet"></i>', page: 'transactions' },
+    { id: 'nav-skins', label: 'Skins', icon: '<i class="fas fa-tshirt"></i>', page: 'skins' },
   ]
 };
 
@@ -206,7 +207,7 @@ async function updateTaskProgress(type, amount = 1) {
         task.completed = updated.completed;
         
         if (task.completed) {
-            showGameModal('Task Completed!', `You completed: ${task.title}`, 'âœ…', 'Great!');
+            showGameModal('Task Completed!', `You completed: ${task.title}`, '✓', 'Great!');
         }
     } catch (e) {
         console.error('Failed to update task progress:', e);
@@ -261,7 +262,7 @@ function renderDailyTasks() {
       
       const rewardDisplay = task.reward_type === 'coins' 
           ? `${new Decimal(task.reward_amount).toFixed(9)} coins`
-          : `ðŸŽ ${task.reward_amount}x Present`;
+          : `🎁 ${task.reward_amount}x Present`;
 
       let actionButton = '';
       
@@ -497,7 +498,7 @@ async function claimAdminTask(taskId) {
             response.reward.type === 'coins' 
                 ? `You received ${response.reward.amount} coins!` 
                 : `You received a special present!`, 
-            'ðŸŽ‰'
+            '🎁'
         );
         
 
@@ -665,7 +666,7 @@ function openFolder() {
             <div class="submenu-item" onclick="showPage('${item.page}')">
                 <span class="submenu-icon">${item.icon}</span>
                 <span class="submenu-text">${item.label}</span>
-                <span class="submenu-arrow">âžœ</span>
+          <span class="submenu-arrow">›</span>
             </div>
         `).join('')}
     `;
@@ -756,6 +757,14 @@ async function purchaseUpgrade(upgradeId) {
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
+
+    try {
+      await loadSkins();
+      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (img) coinImageEl.src = img;
+    } catch (e) {
+      console.warn('Failed to load or apply skin on init:', e);
+    }
 
 
     try {
@@ -1118,7 +1127,7 @@ async function drawSoloLottery() {
         showGameModal(
           'You Won!',
           `+${result.prize} SISI`,
-          'ðŸŽ‰'
+          '🎁'
         );
       } else {
         showGameNotification(`Winner: ${result.winner.username || 'Anonymous'} won ${result.prize}!`, 'success');
@@ -1713,9 +1722,9 @@ async function checkBroadcast() {
 
 
       if (broadcastId !== viewedId) {
-        const type = data.type || 'info';
-        const icon = type === 'warning' ? 'âš ï¸' : (type === 'error' ? 'ðŸš«' : 'ðŸ“¢');
-        const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
+          const type = data.type || 'info';
+          const icon = type === 'warning' ? '⚠️' : (type === 'error' ? '🚫' : '📢');
+          const title = type === 'warning' ? 'Important Announcement' : (type === 'error' ? 'Critical Alert' : 'Announcement');
         
         showGameModal(title, data.message, icon, 'Got it', () => {
           localStorage.setItem('viewed_broadcast_id', broadcastId);
