@@ -317,6 +317,8 @@ async function loadSkins() {
     renderSkinsUI();
   } catch (e) {
     console.error('Failed to load skins:', e);
+    const container = document.getElementById('skins-list') || document.getElementById('skins');
+    if (container) container.innerHTML = `<p style="text-align:center; padding:2rem; color:var(--danger);">Failed to load skins: ${escapeHtml(e.message || String(e))}</p>`;
   }
 }
 
@@ -636,6 +638,11 @@ function showPage(pageId, tabId = null) {
 
   if (pageId === 'leaderboard') {
     fetchAndDisplayLeaderboard('score');
+  }
+
+  if (pageId === 'skins') {
+
+    loadSkins().catch(e => console.warn('Failed to load skins on page open', e));
   }
 
 
