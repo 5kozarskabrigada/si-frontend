@@ -336,40 +336,38 @@ function renderSkinsUI() {
     const isSelected = playerData?.selected_skin && playerData.selected_skin.id === skin.id;
     const priceText = skin.price ? `${new Decimal(skin.price).toFixed(9)} coins` : (skin.task_id ? 'Unlock via task' : 'Free');
 
-    let actionBtn = '';
+    let actionHtml = '';
     if (owned) {
-      if (isSelected) actionBtn = '<span class="badge badge-primary">Selected</span>';
-      else actionBtn = `<button class="btn btn-outline" onclick="selectSkin('${skin.id}')">Select</button>`;
+      if (isSelected) actionHtml = '<span class="skin-badge">✓ Selected</span>';
+      else actionHtml = `<button class="skin-btn skin-btn-select" onclick="selectSkin('${escapeHtml(skin.id)}')">Select</button>`;
     } else if (skin.price) {
-      actionBtn = `<button class="btn btn-primary" onclick="purchaseSkin('${skin.id}')">Buy for ${new Decimal(skin.price).toFixed(9)}</button>`;
+      actionHtml = `<button class="skin-btn skin-btn-purchase" onclick="purchaseSkin('${escapeHtml(skin.id)}')">Buy</button>`;
     } else if (skin.task_id) {
-      actionBtn = `<button class="btn btn-outline" onclick="showTaskForSkin('${skin.task_id}')">View Task</button>`;
+      actionHtml = `<button class="skin-btn skin-btn-select" onclick="showTaskForSkin('${escapeHtml(skin.task_id)}')">View Task</button>`;
     } else {
-      actionBtn = `<button class="btn btn-outline" disabled>Unavailable</button>`;
+      actionHtml = `<button class="skin-btn" disabled>Unavailable</button>`;
     }
 
+    const selectedClass = isSelected ? 'selected' : '';
+    const imgSrc = skin.image_url ? escapeHtml(skin.image_url) : '/assets/skin1.png';
+
     return `
-      <div class="skin-card content-card" style="display:flex; gap:1rem; align-items:center;">
-        <div style="width:96px; height:96px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
-          <img src="${escapeHtml(skin.image_url || '')}" alt="${escapeHtml(skin.name)}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:contain;" onerror="this.src='https://via.placeholder.com/96?text=No+Image'">
+      <div class="skin-card ${selectedClass}">
+        <div class="skin-image-wrapper">
+          <img src="${imgSrc}" alt="${escapeHtml(skin.name)}" onerror="this.src=/assets/skin1.png">
         </div>
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
-            <div style="min-width:0;">
-              <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${escapeHtml(skin.name)}</div>
-              <div style="color:var(--text-dim); font-size:0.85rem;">${priceText}</div>
-            </div>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
-              ${actionBtn}
-            </div>
+        <div class="skin-card-content">
+          <div class="skin-name">${escapeHtml(skin.name)}</div>
+          <div class="skin-price">${priceText}</div>
+          <div class="skin-action">
+            ${actionHtml}
           </div>
-          ${skin.description ? `<div style="margin-top:0.5rem; color:var(--text-secondary);">${escapeHtml(skin.description)}</div>` : ''}
         </div>
       </div>
     `;
   }).join('');
 
-  container.innerHTML = `<div style="display:flex; flex-direction:column; gap:1rem;">${grid}</div>`;
+  container.innerHTML = grid;
 }
 
 window.showTaskForSkin = function(taskId) {
