@@ -354,7 +354,7 @@ function renderSkinsUI() {
     return `
       <div class="skin-card ${selectedClass}">
         <div class="skin-image-wrapper">
-          <img src="${imgSrc}" alt="${escapeHtml(skin.name)}" onerror="this.src=/assets/skin1.png">
+          <img src="${imgSrc}" alt="${escapeHtml(skin.name)}" onerror="console.warn('Failed to load skin image:', this.src); this.src='/assets/skin1.png'" onload="console.log('Loaded skin image:', this.src)">
         </div>
         <div class="skin-card-content">
           <div class="skin-name">${escapeHtml(skin.name)}</div>
@@ -410,8 +410,12 @@ window.selectSkin = async function(skinId) {
     if (res && res.success) {
       playerData = await apiRequest(`/player/${userId}`);
 
-      const img = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
-      if (img) coinImageEl.src = img;
+      const selectedImg = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (selectedImg) {
+        coinImageEl.src = selectedImg;
+        coinImageEl.onload = () => { console.log('Skin image loaded successfully'); };
+        coinImageEl.onerror = () => { coinImageEl.src = '/assets/skin1.png'; console.warn('Failed to load skin, using fallback'); };
+      }
       await loadSkins();
       showGameNotification('Skin applied!', 'success');
     } else {
@@ -1678,6 +1682,16 @@ async function init() {
     score = new Decimal(playerData.score);
     clickValue = new Decimal(playerData.click_value);
     autoClickRate = new Decimal(playerData.auto_click_rate);
+
+    try {
+      await loadSkins();
+      const selectedImg = playerData.selected_skin?.image_url || (playerData.owned_skins || []).find(s => s.selected)?.image_url;
+      if (selectedImg) {
+        coinImageEl.src = selectedImg;
+      }
+    } catch (e) {
+      console.warn('Failed to load skins on init:', e);
+    }
 
     checkBroadcast();
 
