@@ -304,7 +304,6 @@ async function loadSkins() {
     const res = await apiRequest('/skins');
     skinsList = Array.isArray(res.skins) ? res.skins : (res.skins || []);
 
-
     const ownedMap = {};
     (playerData?.owned_skins || []).forEach(s => { if (s && s.id) ownedMap[String(s.id)] = s; });
 
@@ -313,6 +312,12 @@ async function loadSkins() {
       owned: Boolean(ownedMap[String(s.id)]),
       owned_meta: ownedMap[String(s.id)] || null
     }));
+
+    skinsList.sort((a, b) => {
+      if (a.name === 'Original Skin') return -1;
+      if (b.name === 'Original Skin') return 1;
+      return 0;
+    });
 
     renderSkinsUI();
   } catch (e) {
@@ -334,18 +339,19 @@ function renderSkinsUI() {
   const grid = skinsList.map(skin => {
     const owned = skin.owned;
     const isSelected = playerData?.selected_skin && playerData.selected_skin.id === skin.id;
+    const isFree = !skin.price && !skin.task_id;
     const priceText = skin.price ? `${new Decimal(skin.price).toFixed(9)} coins` : (skin.task_id ? 'Unlock via task' : 'Free');
 
     let actionHtml = '';
     if (owned) {
       if (isSelected) actionHtml = '<span class="skin-badge">✓ Selected</span>';
       else actionHtml = `<button class="skin-btn skin-btn-select" onclick="selectSkin('${escapeHtml(skin.id)}')">Select</button>`;
+    } else if (isFree) {
+      actionHtml = `<button class="skin-btn skin-btn-select" onclick="selectSkin('${escapeHtml(skin.id)}')">Claim</button>`;
     } else if (skin.price) {
       actionHtml = `<button class="skin-btn skin-btn-purchase" onclick="purchaseSkin('${escapeHtml(skin.id)}')">Buy</button>`;
     } else if (skin.task_id) {
       actionHtml = `<button class="skin-btn skin-btn-select" onclick="showTaskForSkin('${escapeHtml(skin.task_id)}')">View Task</button>`;
-    } else {
-      actionHtml = `<button class="skin-btn" disabled>Unavailable</button>`;
     }
 
     const selectedClass = isSelected ? 'selected' : '';
@@ -605,10 +611,22 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 
     const response = await fetch(`${BACKEND_URL}${endpoint}`, options);
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Invalid JSON response from server' }));
-      throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: 'Invalid JSON response from server' };
+      }
+      throw new Error(errorData?.error || `HTTP error! Status: ${response.status}`);
     }
-    return await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      console.error(`Failed to parse JSON response from ${endpoint}:`, e);
+      throw new Error('Invalid response from server');
+    }
+    return data;
   } catch (error) {
     console.error(`API request to ${endpoint} failed:`, error);
     throw error;
